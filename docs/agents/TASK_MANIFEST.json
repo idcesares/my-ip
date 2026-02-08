@@ -1,0 +1,463 @@
+{
+  "project": {
+    "name": "whatsmyip",
+    "version": "1.0.0",
+    "description": "IP address detection and browser diagnostics application",
+    "tech_stack": {
+      "framework": "Next.js 15",
+      "language": "TypeScript 5.3+",
+      "styling": "Tailwind CSS + shadcn/ui",
+      "runtime": "Node.js 20+"
+    }
+  },
+  "execution": {
+    "mode": "sequential",
+    "validation_required": true,
+    "fail_fast": true,
+    "estimated_duration_minutes": 90
+  },
+  "tasks": [
+    {
+      "id": "TASK_001",
+      "name": "Initialize Next.js Project",
+      "priority": "CRITICAL",
+      "dependencies": [],
+      "estimated_minutes": 2,
+      "commands": [
+        {
+          "type": "shell",
+          "command": "npx create-next-app@latest whatsmyip --typescript --tailwind --app --eslint --src-dir --import-alias '@/*' --use-npm --no-git",
+          "description": "Create Next.js project"
+        },
+        {
+          "type": "shell",
+          "command": "cd whatsmyip",
+          "description": "Change to project directory"
+        }
+      ],
+      "validation": {
+        "type": "file_exists",
+        "files": ["package.json", "tsconfig.json", "tailwind.config.ts", "src/app"]
+      },
+      "on_failure": {
+        "action": "retry",
+        "max_retries": 3,
+        "cleanup": ["rm -rf whatsmyip"]
+      }
+    },
+    {
+      "id": "TASK_002",
+      "name": "Install Dependencies",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_001"],
+      "estimated_minutes": 3,
+      "commands": [
+        {
+          "type": "shell",
+          "command": "npm install zod@^3.22.0 framer-motion@^11.0.0 lucide-react@^0.344.0 next-themes@^0.2.1 class-variance-authority@^0.7.0 clsx@^2.1.0 tailwind-merge@^2.2.0",
+          "description": "Install production dependencies"
+        },
+        {
+          "type": "shell",
+          "command": "npm install -D @types/node@^20.0.0 vitest@^1.2.0 @vitejs/plugin-react@^4.2.0 @testing-library/react@^14.0.0 @testing-library/jest-dom@^6.0.0",
+          "description": "Install dev dependencies"
+        }
+      ],
+      "validation": {
+        "type": "package_installed",
+        "packages": ["zod", "next-themes", "framer-motion", "lucide-react", "vitest"]
+      }
+    },
+    {
+      "id": "TASK_003",
+      "name": "Configure shadcn/ui",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_002"],
+      "estimated_minutes": 2,
+      "commands": [
+        {
+          "type": "shell",
+          "command": "npx shadcn@latest init -y -d",
+          "description": "Initialize shadcn/ui"
+        },
+        {
+          "type": "shell",
+          "command": "npx shadcn@latest add card button badge tooltip accordion separator toast",
+          "description": "Install UI components"
+        }
+      ],
+      "validation": {
+        "type": "file_exists",
+        "files": [
+          "src/components/ui/card.tsx",
+          "src/components/ui/button.tsx",
+          "src/lib/utils.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK_004",
+      "name": "Update TypeScript Config",
+      "priority": "HIGH",
+      "dependencies": ["TASK_003"],
+      "estimated_minutes": 1,
+      "files": [
+        {
+          "path": "tsconfig.json",
+          "action": "replace",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_004"
+        }
+      ],
+      "validation": {
+        "type": "command",
+        "command": "npx tsc --noEmit",
+        "expected_exit_code": 0
+      }
+    },
+    {
+      "id": "TASK_005",
+      "name": "Create Directory Structure",
+      "priority": "HIGH",
+      "dependencies": ["TASK_004"],
+      "estimated_minutes": 1,
+      "commands": [
+        {
+          "type": "shell",
+          "command": "mkdir -p src/components/ui src/lib src/hooks src/types src/app/api/ip public/icons __tests__/unit __tests__/integration",
+          "description": "Create directories"
+        }
+      ],
+      "validation": {
+        "type": "directory_exists",
+        "directories": [
+          "src/components/ui",
+          "src/lib",
+          "src/hooks",
+          "src/types",
+          "src/app/api/ip"
+        ]
+      }
+    },
+    {
+      "id": "TASK_006",
+      "name": "Create Type Definitions",
+      "priority": "HIGH",
+      "dependencies": ["TASK_005"],
+      "estimated_minutes": 2,
+      "files": [
+        {
+          "path": "src/types/index.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_006"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/types/index.ts"]
+      }
+    },
+    {
+      "id": "TASK_007",
+      "name": "Create Utility Functions",
+      "priority": "HIGH",
+      "dependencies": ["TASK_006"],
+      "estimated_minutes": 3,
+      "files": [
+        {
+          "path": "src/lib/ip-utils.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_007"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/lib/ip-utils.ts"]
+      }
+    },
+    {
+      "id": "TASK_008",
+      "name": "Create IP Detection Logic",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_007"],
+      "estimated_minutes": 5,
+      "files": [
+        {
+          "path": "src/lib/ip-detection.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_008"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/lib/ip-detection.ts"]
+      }
+    },
+    {
+      "id": "TASK_009",
+      "name": "Create API Route",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_008"],
+      "estimated_minutes": 3,
+      "files": [
+        {
+          "path": "src/app/api/ip/route.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_009"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/app/api/ip/route.ts"]
+      }
+    },
+    {
+      "id": "TASK_010",
+      "name": "Create UI Components",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_009"],
+      "estimated_minutes": 15,
+      "files": [
+        {
+          "path": "src/components/ip-card.tsx",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_010 Component 1"
+        },
+        {
+          "path": "src/components/browser-info-card.tsx",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_010 Component 2"
+        },
+        {
+          "path": "src/components/display-info-card.tsx",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_010 Component 3"
+        },
+        {
+          "path": "src/components/theme-toggle.tsx",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_010 Component 4"
+        },
+        {
+          "path": "src/components/theme-provider.tsx",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_010 Component 5"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/components/*.tsx"]
+      }
+    },
+    {
+      "id": "TASK_011",
+      "name": "Create Custom Hooks",
+      "priority": "HIGH",
+      "dependencies": ["TASK_010"],
+      "estimated_minutes": 5,
+      "files": [
+        {
+          "path": "src/hooks/use-browser-info.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_011"
+        },
+        {
+          "path": "src/hooks/use-network-info.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_011"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/hooks/*.ts"]
+      }
+    },
+    {
+      "id": "TASK_012",
+      "name": "Create Main Page",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_011"],
+      "estimated_minutes": 5,
+      "files": [
+        {
+          "path": "src/app/page.tsx",
+          "action": "replace",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_012"
+        },
+        {
+          "path": "src/app/layout.tsx",
+          "action": "replace",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_012"
+        }
+      ],
+      "validation": {
+        "type": "typescript_compile",
+        "files": ["src/app/page.tsx", "src/app/layout.tsx"]
+      }
+    },
+    {
+      "id": "TASK_013",
+      "name": "Configure Styling",
+      "priority": "HIGH",
+      "dependencies": ["TASK_012"],
+      "estimated_minutes": 3,
+      "files": [
+        {
+          "path": "tailwind.config.ts",
+          "action": "replace",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_013"
+        },
+        {
+          "path": "src/app/globals.css",
+          "action": "replace",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_013"
+        }
+      ],
+      "validation": {
+        "type": "file_exists",
+        "files": ["tailwind.config.ts", "src/app/globals.css"]
+      }
+    },
+    {
+      "id": "TASK_014",
+      "name": "Environment Configuration",
+      "priority": "MEDIUM",
+      "dependencies": ["TASK_013"],
+      "estimated_minutes": 2,
+      "files": [
+        {
+          "path": ".env.local",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_014"
+        },
+        {
+          "path": ".env.example",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_014"
+        }
+      ],
+      "validation": {
+        "type": "file_exists",
+        "files": [".env.local", ".env.example"]
+      }
+    },
+    {
+      "id": "TASK_015",
+      "name": "Create Tests",
+      "priority": "MEDIUM",
+      "dependencies": ["TASK_014"],
+      "estimated_minutes": 10,
+      "files": [
+        {
+          "path": "vitest.config.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_015"
+        },
+        {
+          "path": "__tests__/setup.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_015"
+        },
+        {
+          "path": "__tests__/unit/ip-utils.test.ts",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_015"
+        }
+      ],
+      "commands": [
+        {
+          "type": "shell",
+          "command": "npm install -D @testing-library/jest-dom",
+          "description": "Install test dependency"
+        }
+      ],
+      "validation": {
+        "type": "command",
+        "command": "npm run test",
+        "expected_exit_code": 0
+      }
+    },
+    {
+      "id": "TASK_016",
+      "name": "Build and Validate",
+      "priority": "CRITICAL",
+      "dependencies": ["TASK_015"],
+      "estimated_minutes": 5,
+      "commands": [
+        {
+          "type": "shell",
+          "command": "npx tsc --noEmit",
+          "description": "TypeScript validation"
+        },
+        {
+          "type": "shell",
+          "command": "npm run test",
+          "description": "Run tests"
+        },
+        {
+          "type": "shell",
+          "command": "npm run build",
+          "description": "Build application"
+        }
+      ],
+      "validation": {
+        "type": "multi",
+        "checks": [
+          {
+            "type": "command",
+            "command": "npx tsc --noEmit",
+            "expected_exit_code": 0
+          },
+          {
+            "type": "command",
+            "command": "npm run test",
+            "expected_exit_code": 0
+          },
+          {
+            "type": "command",
+            "command": "npm run build",
+            "expected_exit_code": 0
+          },
+          {
+            "type": "directory_exists",
+            "directories": [".next"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TASK_017",
+      "name": "Generate Documentation",
+      "priority": "HIGH",
+      "dependencies": ["TASK_016"],
+      "estimated_minutes": 5,
+      "files": [
+        {
+          "path": "README.md",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_017"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "action": "create",
+          "content_ref": "See AI_AGENT_INSTRUCTIONS.md TASK_017"
+        }
+      ],
+      "validation": {
+        "type": "file_exists",
+        "files": ["README.md", "CONTRIBUTING.md"]
+      }
+    }
+  ],
+  "success_criteria": {
+    "typescript_errors": 0,
+    "test_pass_rate": 100,
+    "build_success": true,
+    "api_functional": true,
+    "lighthouse_score": 95
+  },
+  "output": {
+    "format": "json",
+    "log_file": "execution.log",
+    "report_file": "validation-report.json"
+  }
+}
