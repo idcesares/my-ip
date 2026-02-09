@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { domAnimation, LazyMotion, m } from "framer-motion";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -23,7 +23,8 @@ export function CopyButton({ value, label }: { value: string | null; label: stri
 
   return (
     <Button variant="outline" size="sm" onClick={onCopy} disabled={!value} className="min-w-26">
-      <motion.span
+      <LazyMotion features={domAnimation}>
+      <m.span
         key={copied ? "done" : "copy"}
         initial={{ opacity: 0, y: 3 }}
         animate={{ opacity: 1, y: 0 }}
@@ -32,7 +33,8 @@ export function CopyButton({ value, label }: { value: string | null; label: stri
       >
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
         <span>{copied ? "Copied" : `Copy ${label}`}</span>
-      </motion.span>
+      </m.span>
+      </LazyMotion>
     </Button>
   );
 }

@@ -5,6 +5,8 @@
 **Package Version:** 2.0  
 **Last Updated:** February 7, 2026
 
+> Status note (February 9, 2026): The runtime implementation has evolved beyond the original package baseline (Next.js 16 updates, expanded diagnostics, SEO/authorship additions, and additional tests). For active coding tasks, prioritize current code and `docs/project/` docs first, then use this package for orchestration patterns.
+
 ---
 
 ## 📦 Package Contents

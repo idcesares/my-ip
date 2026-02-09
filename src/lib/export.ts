@@ -6,6 +6,9 @@ export function buildTextReport(ip: IPInfo, browser: BrowserDiagnostics | null):
     `IPv4: ${ip.ipv4 ?? "N/A"}`,
     `IPv6: ${ip.ipv6 ?? "N/A"}`,
     `Category: ${ip.category}`,
+    `Detection Source: ${ip.source}`,
+    `Detection Confidence: ${ip.confidence}`,
+    `Relay Likely: ${ip.relayLikely}`,
     `Timestamp: ${ip.timestamp}`,
   ];
 

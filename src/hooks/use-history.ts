@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { HistoryEntry } from "@/types";
 
 const KEY = "ip-history";
@@ -22,18 +22,18 @@ function readInitialHistory(): HistoryEntry[] {
 export function useHistory() {
   const [history, setHistory] = useState<HistoryEntry[]>(readInitialHistory);
 
-  const add = (item: Omit<HistoryEntry, "id">) => {
+  const add = useCallback((item: Omit<HistoryEntry, "id">) => {
     setHistory((prev) => {
       const next = [{ ...item, id: crypto.randomUUID() }, ...prev].slice(0, MAX_ITEMS);
       localStorage.setItem(KEY, JSON.stringify(next));
       return next;
     });
-  };
+  }, []);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     localStorage.removeItem(KEY);
     setHistory([]);
-  };
+  }, []);
 
   return { history, add, clear };
 }

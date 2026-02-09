@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { detectIP, isValidDetection } from "@/lib/ip-detection";
+import { stripPort } from "@/lib/ip-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { ipQuerySchema } from "@/lib/schemas";
 import type { APIError } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+function getRateLimitKey(request: NextRequest): string {
+  const raw =
+    request.headers.get("cf-connecting-ip") ??
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown";
+
+  return stripPort(raw) || "unknown";
+}
 
 function toText(payload: Awaited<ReturnType<typeof detectIP>>) {
   const date = new Date(payload.timestamp).toISOString().replace("T", " ").replace(".000", "").replace("Z", " UTC");
@@ -19,13 +30,7 @@ function toText(payload: Awaited<ReturnType<typeof detectIP>>) {
 }
 
 export async function GET(request: NextRequest) {
-  const ipKey =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown";
-
-  const limit = rateLimit(ipKey);
+  const limit = rateLimit(getRateLimitKey(request));
   if (!limit.allowed) {
     const error: APIError = {
       error: "RATE_LIMITED",
@@ -59,7 +64,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const includeGeo = parsedQuery.data.include?.split(",").includes("geo") ?? false;
+  const includeGeo =
+    parsedQuery.data.include
+      ?.split(",")
+      .map((value) => value.trim().toLowerCase())
+      .includes("geo") ?? false;
   const payload = await detectIP({ includeGeo });
 
   if (!isValidDetection(payload)) {

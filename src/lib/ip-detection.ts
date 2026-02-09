@@ -4,6 +4,7 @@ import { geoSchema } from "@/lib/schemas";
 import type { GeoLocation, IPInfo, ISPInfo } from "@/types";
 
 type IPSource = IPInfo["source"];
+type IPConfidence = IPInfo["confidence"];
 
 function parseForwardedFor(forwarded: string): string | null {
   const match = forwarded.match(/for=([^;,\s]+)/i);
@@ -55,12 +56,16 @@ async function resolveGeo(ip: string): Promise<{ location: GeoLocation | null; i
   }
 
   if (provider === "ipapi") {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3_500);
+
     try {
       const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
         headers: {
           "User-Agent": "whats-my-ip-app/1.0",
         },
         cache: "no-store",
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -103,6 +108,8 @@ async function resolveGeo(ip: string): Promise<{ location: GeoLocation | null; i
       };
     } catch {
       return { location: null, isp: null };
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
@@ -144,6 +151,14 @@ export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPIn
     }
   }
 
+  const confidence: IPConfidence =
+    candidate.source === "cloudflare" || candidate.source === "x-real-ip"
+      ? "high"
+      : candidate.source === "x-forwarded-for" || candidate.source === "forwarded"
+        ? "medium"
+        : "low";
+  const relayLikely = candidate.source === "x-forwarded-for" || candidate.source === "forwarded";
+
   return {
     ip: candidate.ip,
     ipVersion,
@@ -151,6 +166,8 @@ export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPIn
     ipv6: ipVersion === "IPv6" ? candidate.ip : null,
     isPublic: category === "Public",
     source: candidate.source as IPSource,
+    confidence,
+    relayLikely,
     category,
     timestamp: new Date().toISOString(),
     warnings,

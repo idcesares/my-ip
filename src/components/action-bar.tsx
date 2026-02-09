@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, RefreshCw, Share2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { domAnimation, LazyMotion, m } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { buildTextReport, downloadFile, timestampName } from "@/lib/export";
@@ -30,6 +30,24 @@ export function ActionBar({
     toast.success("Exported text report.");
   };
 
+  const copyToClipboardWithFallback = async (text: string): Promise<boolean> => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = text;
+      input.setAttribute("readonly", "");
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(input);
+      return copied;
+    }
+  };
+
   const share = async () => {
     const shareText = `My IP: ${ip.ip} | Browser: ${browser?.userAgent ?? "Unknown"} | Location: ${ip.location?.city ?? "Unknown"}`;
     if (navigator.share) {
@@ -41,12 +59,18 @@ export function ActionBar({
       }
     }
 
-    await navigator.clipboard.writeText(`${shareText} | ${window.location.href}`);
-    toast.success("Share details copied to clipboard.");
+    const copied = await copyToClipboardWithFallback(`${shareText} | ${window.location.href}`);
+    if (copied) {
+      toast.success("Share details copied to clipboard.");
+      return;
+    }
+
+    toast.error("Unable to share or copy automatically.");
   };
 
   return (
-    <motion.div
+    <LazyMotion features={domAnimation}>
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.08 }}
@@ -58,6 +82,7 @@ export function ActionBar({
         <Button variant="outline" onClick={exportTxt}><Download className="h-4 w-4" />Export TXT</Button>
         <Button variant="secondary" onClick={onRefresh}><RefreshCw className="h-4 w-4" />Refresh</Button>
       </div>
-    </motion.div>
+    </m.div>
+    </LazyMotion>
   );
 }

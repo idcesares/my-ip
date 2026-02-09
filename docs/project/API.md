@@ -16,6 +16,8 @@
   "ipv6": null,
   "isPublic": true,
   "source": "x-forwarded-for",
+  "confidence": "medium",
+  "relayLikely": true,
   "category": "Public",
   "timestamp": "2026-02-08T00:00:00.000Z",
   "warnings": [],
@@ -34,3 +36,11 @@
 - `405` method not allowed
 - `429` rate limited (`Retry-After` header)
 - `500` detection failure/internal error
+
+## Notes
+- Rate limiting is keyed from proxy-aware IP headers with normalization.
+- `confidence` reflects trust level of detection source:
+  - `high`: `cf-connecting-ip` or `x-real-ip`
+  - `medium`: `x-forwarded-for` or `forwarded`
+  - `low`: fallback/unknown
+- `relayLikely=true` indicates the value likely passed through proxies/relays.

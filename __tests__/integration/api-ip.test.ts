@@ -11,6 +11,8 @@ describe("ip-detection helpers", () => {
         ipv6: null,
         isPublic: false,
         source: "fallback",
+        confidence: "low",
+        relayLikely: false,
         category: "Private",
         timestamp: new Date().toISOString(),
         warnings: [],
