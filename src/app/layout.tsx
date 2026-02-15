@@ -4,6 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next"
+
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL;
 const metadataBase = siteUrl ? new URL(siteUrl) : undefined;
 
@@ -113,6 +115,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           {children}
           <Toaster />
         </ThemeProvider>
+        <Analytics/>
       </body>
     </html>
   );
