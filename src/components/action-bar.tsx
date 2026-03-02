@@ -49,7 +49,7 @@ export function ActionBar({
   };
 
   const share = async () => {
-    const shareText = `My IP: ${ip.ip} | Browser: ${browser?.userAgent ?? "Unknown"} | Location: ${ip.location?.city ?? "Unknown"}`;
+    const shareText = `My IP: ${ip.ip} (${ip.ipVersion}) | Location: ${ip.location?.city ?? "Not available"}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "What's My IP", text: shareText, url: window.location.href });

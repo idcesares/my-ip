@@ -154,7 +154,7 @@ export function HomePageClient() {
       <footer className="pb-2 text-sm text-[hsl(var(--muted-foreground))]">
         <p className="mb-2">Privacy-first diagnostics. No analytics. No trackers. No server-side history.</p>
         <p>
-          © 2026 Isaac D&apos;Césares @{" "}
+          © {new Date().getFullYear()} Isaac D&apos;Césares @{" "}
           <a className="underline underline-offset-4 hover:text-[hsl(var(--foreground))]" href="https://dcesares.dev" target="_blank" rel="noreferrer">
             dcesares.dev
           </a>

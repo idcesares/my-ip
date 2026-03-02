@@ -1,8 +1,22 @@
 import { z } from "zod";
 
+const VALID_INCLUDE_TOKENS = new Set(["geo"]);
+
 export const ipQuerySchema = z.object({
   format: z.enum(["json", "text"]).default("json"),
-  include: z.string().optional(),
+  include: z
+    .string()
+    .optional()
+    .refine(
+      (value) => {
+        if (value === undefined) return true;
+        return value
+          .split(",")
+          .map((t) => t.trim().toLowerCase())
+          .every((t) => t === "" || VALID_INCLUDE_TOKENS.has(t));
+      },
+      { message: "Unknown include parameter. Allowed values: geo" },
+    ),
 });
 
 export const geoSchema = z.object({
