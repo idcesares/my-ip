@@ -18,7 +18,8 @@ function getRateLimitKey(request: NextRequest): string {
 }
 
 function toText(payload: Awaited<ReturnType<typeof detectIP>>) {
-  const date = new Date(payload.timestamp).toISOString().replace("T", " ").replace(".000", "").replace("Z", " UTC");
+  const d = new Date(payload.timestamp);
+  const date = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")} ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}:${String(d.getUTCSeconds()).padStart(2, "0")} UTC`;
   return [
     `Your IP Address: ${payload.ip} (${payload.ipVersion})`,
     payload.location

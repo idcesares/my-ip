@@ -24,12 +24,10 @@ function pruneExpired(now: number) {
   }
 
   if (bucket.size > MAX_BUCKET_SIZE) {
+    const sorted = [...bucket.entries()].sort((a, b) => a[1].expiresAt - b[1].expiresAt);
     const keysToDelete = bucket.size - MAX_BUCKET_SIZE;
-    let deleted = 0;
-    for (const key of bucket.keys()) {
-      bucket.delete(key);
-      deleted += 1;
-      if (deleted >= keysToDelete) break;
+    for (let i = 0; i < keysToDelete; i++) {
+      bucket.delete(sorted[i][0]);
     }
   }
 

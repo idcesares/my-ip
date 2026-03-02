@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { detectIP } from "@/lib/ip-detection";
+import { detectIP, isValidDetection } from "@/lib/ip-detection";
 import { rateLimit } from "@/lib/rate-limit";
 import { DELETE, GET, POST, PUT } from "@/app/api/ip/route";
 import type { IPInfo } from "@/types";
@@ -103,5 +103,79 @@ describe("/api/ip route", () => {
     expect(put.status).toBe(405);
     expect(del.status).toBe(405);
     expect(postBody.error).toBe("METHOD_NOT_ALLOWED");
+  });
+
+  it("sets Cache-Control header on JSON response", async () => {
+    const request = new NextRequest("http://localhost:3000/api/ip");
+    const response = await GET(request);
+
+    expect(response.headers.get("Cache-Control")).toBe("no-store, no-cache, must-revalidate");
+  });
+
+  it("sets Cache-Control header on text response", async () => {
+    const request = new NextRequest("http://localhost:3000/api/ip?format=text");
+    const response = await GET(request);
+
+    expect(response.headers.get("Cache-Control")).toBe("no-store, no-cache, must-revalidate");
+  });
+
+  it("returns text with location and ISP when present", async () => {
+    vi.mocked(detectIP).mockResolvedValue(
+      buildPayload({
+        location: {
+          city: "São Paulo",
+          region: "SP",
+          country: "BR",
+          timezone: "America/Sao_Paulo",
+          coordinates: { latitude: -23.5505, longitude: -46.6333 },
+        },
+        isp: {
+          name: "TestISP",
+          asn: "AS12345",
+          organization: "Test Org",
+        },
+      }),
+    );
+
+    const request = new NextRequest("http://localhost:3000/api/ip?format=text");
+    const response = await GET(request);
+    const body = await response.text();
+
+    expect(body).toContain("Location: São Paulo, SP, BR");
+    expect(body).toContain("ISP: TestISP (AS12345)");
+  });
+
+  it("formats text timestamp without stray milliseconds", async () => {
+    vi.mocked(detectIP).mockResolvedValue(
+      buildPayload({
+        timestamp: "2026-03-02T15:30:45.123Z",
+      }),
+    );
+
+    const request = new NextRequest("http://localhost:3000/api/ip?format=text");
+    const response = await GET(request);
+    const body = await response.text();
+
+    expect(body).toContain("Timestamp: 2026-03-02 15:30:45 UTC");
+    expect(body).not.toContain(".123");
+  });
+
+  it("returns 500 when IP detection fails", async () => {
+    vi.mocked(isValidDetection).mockReturnValue(false);
+
+    const request = new NextRequest("http://localhost:3000/api/ip");
+    const response = await GET(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("IP_DETECTION_FAILED");
+  });
+
+  it("returns 400 for unknown include parameter values", async () => {
+    const request = new NextRequest("http://localhost:3000/api/ip?include=dns");
+    const response = await GET(request);
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toBe("INVALID_QUERY");
   });
 });
