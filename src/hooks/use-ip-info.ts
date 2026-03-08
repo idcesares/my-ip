@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import useSWR from "swr";
 import type { IPInfo } from "@/types";
 
@@ -10,8 +11,16 @@ const fetcher = async (url: string): Promise<IPInfo> => {
 };
 
 export function useIPInfo() {
-  return useSWR<IPInfo>("/api/ip?format=json", fetcher, {
+  const swr = useSWR<IPInfo>("/api/ip?format=json", fetcher, {
     refreshInterval: 60_000,
     revalidateOnFocus: false,
   });
+
+  const fetchGeo = useCallback(async () => {
+    const data = await fetcher("/api/ip?format=json&include=geo");
+    swr.mutate(data, false);
+    return data;
+  }, [swr]);
+
+  return { ...swr, fetchGeo };
 }

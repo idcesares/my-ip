@@ -1,17 +1,24 @@
 "use client";
 
-import { domAnimation, LazyMotion, m, useReducedMotion } from "framer-motion";
-import { AlertTriangle, Globe, Radar, ShieldAlert, Waypoints } from "lucide-react";
+import { useState } from "react";
+import { m, useReducedMotion } from "framer-motion";
+import { AlertTriangle, Globe, MapPin, Radar, ShieldAlert, Waypoints } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { IPInfo } from "@/types";
 
-export function IPAddressCard({ data }: { data: IPInfo }) {
+interface IPAddressCardProps {
+  data: IPInfo;
+  onFetchGeo?: () => Promise<IPInfo>;
+}
+
+export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
   const reduceMotion = useReducedMotion();
+  const [geoLoading, setGeoLoading] = useState(false);
 
   return (
-    <LazyMotion features={domAnimation}>
     <m.section
       initial={reduceMotion ? false : { opacity: 0, y: 12 }}
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -76,6 +83,59 @@ export function IPAddressCard({ data }: { data: IPInfo }) {
             </div>
           </div>
 
+          {data.location ? (
+            <div className="rounded-xl border bg-[hsl(var(--background))/0.45] p-4">
+              <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
+                <MapPin className="h-3.5 w-3.5" /> Location
+              </div>
+              <div className="grid gap-1 text-sm md:grid-cols-2">
+                <p className="text-[hsl(var(--muted-foreground))]">
+                  City: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.city ?? "Unknown"}</span>
+                </p>
+                <p className="text-[hsl(var(--muted-foreground))]">
+                  Region: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.region ?? "Unknown"}</span>
+                </p>
+                <p className="text-[hsl(var(--muted-foreground))]">
+                  Country: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.country ?? "Unknown"}</span>
+                </p>
+                {data.location.timezone && (
+                  <p className="text-[hsl(var(--muted-foreground))]">
+                    Timezone: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.timezone}</span>
+                  </p>
+                )}
+              </div>
+              {data.isp && (
+                <div className="mt-2 grid gap-1 text-sm md:grid-cols-2">
+                  <p className="text-[hsl(var(--muted-foreground))]">
+                    ISP: <span className="font-medium text-[hsl(var(--foreground))]">{data.isp.name ?? "Unknown"}</span>
+                  </p>
+                  {data.isp.asn && (
+                    <p className="text-[hsl(var(--muted-foreground))]">
+                      ASN: <span className="font-medium text-[hsl(var(--foreground))]">{data.isp.asn}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : onFetchGeo ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={geoLoading}
+              onClick={async () => {
+                setGeoLoading(true);
+                try {
+                  await onFetchGeo();
+                } finally {
+                  setGeoLoading(false);
+                }
+              }}
+            >
+              <MapPin className="h-4 w-4" />
+              {geoLoading ? "Looking up location…" : "Show Location"}
+            </Button>
+          ) : null}
+
           {data.warnings.length > 0 && (
             <ul className="space-y-2 rounded-xl border border-[hsl(var(--destructive))]/35 bg-[hsl(var(--destructive))]/10 p-4 text-sm">
               {data.warnings.map((warning) => (
@@ -93,6 +153,5 @@ export function IPAddressCard({ data }: { data: IPInfo }) {
         </CardContent>
       </Card>
     </m.section>
-    </LazyMotion>
   );
 }

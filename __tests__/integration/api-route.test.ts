@@ -8,10 +8,11 @@ import type { IPInfo } from "@/types";
 vi.mock("@/lib/ip-detection", () => ({
   detectIP: vi.fn(),
   isValidDetection: vi.fn(() => true),
+  extractClientIP: vi.fn(() => "203.0.113.42"),
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: vi.fn(() => ({ allowed: true, retryAfter: 0 })),
+  rateLimit: vi.fn(() => ({ allowed: true, retryAfter: 0, limit: 60, remaining: 59, resetAt: Date.now() + 60000 })),
 }));
 
 function buildPayload(overrides: Partial<IPInfo> = {}): IPInfo {
@@ -41,7 +42,8 @@ function buildPayload(overrides: Partial<IPInfo> = {}): IPInfo {
 describe("/api/ip route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(rateLimit).mockReturnValue({ allowed: true, retryAfter: 0 });
+    vi.mocked(rateLimit).mockReturnValue({ allowed: true, retryAfter: 0, limit: 60, remaining: 59, resetAt: Date.now() + 60000 });
+    vi.mocked(isValidDetection).mockReturnValue(true);
     vi.mocked(detectIP).mockResolvedValue(buildPayload());
   });
 
@@ -84,7 +86,7 @@ describe("/api/ip route", () => {
   });
 
   it("returns 429 when rate limited", async () => {
-    vi.mocked(rateLimit).mockReturnValue({ allowed: false, retryAfter: 12 });
+    vi.mocked(rateLimit).mockReturnValue({ allowed: false, retryAfter: 12, limit: 60, remaining: 0, resetAt: Date.now() + 12000 });
     const request = new NextRequest("http://localhost:3000/api/ip");
     const response = await GET(request);
     const body = await response.json();
@@ -177,5 +179,34 @@ describe("/api/ip route", () => {
 
     expect(response.status).toBe(400);
     expect((await response.json()).error).toBe("INVALID_QUERY");
+  });
+
+  it("returns raw IP string when format=plain", async () => {
+    const request = new NextRequest("http://localhost:3000/api/ip?format=plain");
+    const response = await GET(request);
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("text/plain");
+    expect(body).toBe("203.0.113.42");
+  });
+
+  it("includes rate-limit headers on JSON success response", async () => {
+    const request = new NextRequest("http://localhost:3000/api/ip");
+    const response = await GET(request);
+
+    expect(response.headers.get("X-RateLimit-Limit")).toBe("60");
+    expect(response.headers.get("X-RateLimit-Remaining")).toBeTruthy();
+    expect(response.headers.get("X-RateLimit-Reset")).toBeTruthy();
+  });
+
+  it("includes rate-limit headers on 429 response", async () => {
+    vi.mocked(rateLimit).mockReturnValue({ allowed: false, retryAfter: 10, limit: 60, remaining: 0, resetAt: Date.now() + 10000 });
+    const request = new NextRequest("http://localhost:3000/api/ip");
+    const response = await GET(request);
+
+    expect(response.headers.get("X-RateLimit-Limit")).toBe("60");
+    expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
+    expect(response.headers.get("Retry-After")).toBe("10");
   });
 });

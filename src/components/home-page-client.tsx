@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { domAnimation, LazyMotion, m } from "framer-motion";
 import { Code2, RefreshCw, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { ActionBar } from "@/components/action-bar";
 import { HistoryTable } from "@/components/history-table";
 import { InfoGrid } from "@/components/info-grid";
 import { IPAddressCard } from "@/components/ip-address-card";
 import { LogoMark } from "@/components/logo-mark";
 import { PrivacyAccordion } from "@/components/privacy-accordion";
+import { WebRTCLeakCard } from "@/components/webrtc-leak-card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +23,7 @@ import { useIPInfo } from "@/hooks/use-ip-info";
 
 export function HomePageClient() {
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
-  const { data: ipInfo, error, isLoading, mutate } = useIPInfo();
+  const { data: ipInfo, error, isLoading, mutate, fetchGeo } = useIPInfo();
   const diagnostics = useBrowserDiagnostics(showAdvancedMetrics);
   const { history, add, clear } = useHistory();
   const lastRecordedIp = useRef<string | null>(null);
@@ -29,6 +31,12 @@ export function HomePageClient() {
   useEffect(() => {
     if (!ipInfo) return;
     if (lastRecordedIp.current === ipInfo.ip) return;
+
+    if (lastRecordedIp.current !== null) {
+      toast.info("IP address changed", {
+        description: `${lastRecordedIp.current} → ${ipInfo.ip}`,
+      });
+    }
 
     const location = ipInfo.location
       ? [ipInfo.location.city, ipInfo.location.region, ipInfo.location.country].filter(Boolean).join(", ")
@@ -44,8 +52,8 @@ export function HomePageClient() {
   }, [add, ipInfo]);
 
   return (
+    <LazyMotion features={domAnimation}>
     <main id="main-content" className="mx-auto min-h-screen w-full max-w-6xl px-4 pb-14 pt-6 md:px-6 md:pt-8">
-      <LazyMotion features={domAnimation}>
       <m.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -80,7 +88,6 @@ export function HomePageClient() {
           </div>
         </div>
       </m.header>
-      </LazyMotion>
 
       <section className="space-y-6">
         {isLoading && (
@@ -110,7 +117,7 @@ export function HomePageClient() {
 
         {ipInfo && (
           <>
-            <IPAddressCard data={ipInfo} />
+            <IPAddressCard data={ipInfo} onFetchGeo={fetchGeo} />
             <ActionBar ip={ipInfo} browser={diagnostics} onRefresh={() => mutate()} />
           </>
         )}
@@ -120,6 +127,8 @@ export function HomePageClient() {
           showAdvanced={showAdvancedMetrics}
           onToggleAdvanced={() => setShowAdvancedMetrics((value) => !value)}
         />
+
+        <WebRTCLeakCard />
 
         {ipInfo && (
           <Tabs defaultValue="history">
@@ -171,5 +180,6 @@ export function HomePageClient() {
         </p>
       </footer>
     </main>
+    </LazyMotion>
   );
 }
