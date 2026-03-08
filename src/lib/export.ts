@@ -26,6 +26,7 @@ export function buildTextReport(ip: IPInfo, browser: BrowserDiagnostics | null):
 }
 
 export function downloadFile(filename: string, content: string, mimeType: string) {
+  if (typeof document === "undefined") return;
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

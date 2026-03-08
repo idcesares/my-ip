@@ -12,6 +12,42 @@ function parseForwardedFor(forwarded: string): string | null {
   return match[1].replace(/"/g, "").replace(/^\[/, "").replace(/\]$/, "");
 }
 
+/**
+ * Extract the client IP string from request headers using the standard
+ * header precedence chain. Shared by rate limiting and IP detection to
+ * ensure both use identical logic.
+ */
+export function extractClientIP(hdrs: Headers): string {
+  const chain = ["cf-connecting-ip", "x-real-ip"] as const;
+
+  for (const key of chain) {
+    const value = hdrs.get(key);
+    if (value) {
+      return stripPort(value) || "unknown";
+    }
+  }
+
+  const xff = hdrs.get("x-forwarded-for");
+  if (xff) {
+    const values = xff
+      .split(",")
+      .map((p) => stripPort(p.trim()))
+      .filter(Boolean);
+    const publicCandidate = values.find((ip) => !isPrivateIP(ip));
+    return publicCandidate ?? values[0] ?? "unknown";
+  }
+
+  const forwarded = hdrs.get("forwarded");
+  if (forwarded) {
+    const forValue = parseForwardedFor(forwarded);
+    if (forValue) {
+      return stripPort(forValue) || "unknown";
+    }
+  }
+
+  return "unknown";
+}
+
 function pickCandidate(raw: Awaited<ReturnType<typeof headers>>) {
   const chain = [
     { key: "cf-connecting-ip", source: "cloudflare" as const },
@@ -48,10 +84,9 @@ function pickCandidate(raw: Awaited<ReturnType<typeof headers>>) {
 }
 
 async function resolveGeo(ip: string): Promise<{ location: GeoLocation | null; isp: ISPInfo | null }> {
-  const includeGeo = process.env.ENABLE_GEOLOCATION === "true";
-  const provider = process.env.GEOLOCATION_PROVIDER ?? "none";
+  const provider = process.env.GEOLOCATION_PROVIDER ?? "ipapi";
 
-  if (!includeGeo || provider === "none") {
+  if (provider === "none") {
     return { location: null, isp: null };
   }
 
@@ -145,9 +180,7 @@ export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPIn
     isp = geo.isp;
 
     if (!location) {
-      warnings.push(
-        "Geolocation unavailable. Set ENABLE_GEOLOCATION=true and GEOLOCATION_PROVIDER=ipapi for opt-in third-party lookup.",
-      );
+      warnings.push("Geolocation lookup failed or returned no data.");
     }
   }
 

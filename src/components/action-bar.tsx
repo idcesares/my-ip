@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, RefreshCw, Share2 } from "lucide-react";
-import { domAnimation, LazyMotion, m } from "framer-motion";
+import { m } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { buildTextReport, downloadFile, timestampName } from "@/lib/export";
@@ -69,7 +69,6 @@ export function ActionBar({
   };
 
   return (
-    <LazyMotion features={domAnimation}>
     <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -83,6 +82,5 @@ export function ActionBar({
         <Button variant="secondary" onClick={onRefresh}><RefreshCw className="h-4 w-4" />Refresh</Button>
       </div>
     </m.div>
-    </LazyMotion>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { domAnimation, LazyMotion, m } from "framer-motion";
+import { memo } from "react";
+import { m } from "framer-motion";
 import { CircleHelp, Globe2, LockKeyhole, MonitorCog, ShieldCheck } from "lucide-react";
 import type { BrowserDiagnostics } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ function Row({
   );
 }
 
-export function InfoGrid({
+export const InfoGrid = memo(function InfoGrid({
   data,
   showAdvanced,
   onToggleAdvanced,
@@ -73,7 +74,6 @@ export function InfoGrid({
           {showAdvanced ? "Basic Metrics" : "Advanced Metrics"}
         </Button>
       </div>
-      <LazyMotion features={domAnimation}>
       <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -156,7 +156,6 @@ export function InfoGrid({
         </CardContent>
       </Card>
       </m.div>
-      </LazyMotion>
     </TooltipProvider>
   );
-}
+});

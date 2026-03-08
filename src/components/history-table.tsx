@@ -16,10 +16,10 @@ export function HistoryTable({ history, onClear }: { history: HistoryEntry[]; on
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>IP</TableHead>
-            <TableHead>Version</TableHead>
-            <TableHead>Time</TableHead>
-            <TableHead>Location</TableHead>
+            <TableHead scope="col">IP</TableHead>
+            <TableHead scope="col">Version</TableHead>
+            <TableHead scope="col">Time</TableHead>
+            <TableHead scope="col">Location</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

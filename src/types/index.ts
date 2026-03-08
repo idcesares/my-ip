@@ -102,6 +102,14 @@ export interface BrowserDiagnostics {
   };
 }
 
+export interface WebRTCLeakResult {
+  supported: boolean;
+  leaking: boolean;
+  localIPs: string[];
+  publicIPs: string[];
+  error: string | null;
+}
+
 export interface HistoryEntry {
   id: string;
   ip: string;

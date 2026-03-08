@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { detectIP, isValidDetection } from "@/lib/ip-detection";
-import { stripPort } from "@/lib/ip-utils";
-import { rateLimit } from "@/lib/rate-limit";
+import { detectIP, extractClientIP, isValidDetection } from "@/lib/ip-detection";
+import { rateLimit, type RateLimitResult } from "@/lib/rate-limit";
 import { ipQuerySchema } from "@/lib/schemas";
 import type { APIError } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-function getRateLimitKey(request: NextRequest): string {
-  const raw =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown";
-
-  return stripPort(raw) || "unknown";
+function rateLimitHeaders(result: RateLimitResult): Record<string, string> {
+  const headers: Record<string, string> = {
+    "X-RateLimit-Limit": String(result.limit),
+    "X-RateLimit-Remaining": String(Math.max(0, result.remaining)),
+  };
+  if (result.resetAt > 0) {
+    headers["X-RateLimit-Reset"] = String(Math.ceil(result.resetAt / 1000));
+  }
+  if (!result.allowed) {
+    headers["Retry-After"] = String(result.retryAfter);
+  }
+  return headers;
 }
 
 function toText(payload: Awaited<ReturnType<typeof detectIP>>) {
@@ -31,7 +34,7 @@ function toText(payload: Awaited<ReturnType<typeof detectIP>>) {
 }
 
 export async function GET(request: NextRequest) {
-  const limit = rateLimit(getRateLimitKey(request));
+  const limit = rateLimit(extractClientIP(request.headers));
   if (!limit.allowed) {
     const error: APIError = {
       error: "RATE_LIMITED",
@@ -42,9 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(error, {
       status: 429,
-      headers: {
-        "Retry-After": String(limit.retryAfter),
-      },
+      headers: rateLimitHeaders(limit),
     });
   }
 
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
         statusCode: 400,
         timestamp: new Date().toISOString(),
       } satisfies APIError,
-      { status: 400 },
+      { status: 400, headers: rateLimitHeaders(limit) },
     );
   }
 
@@ -80,8 +81,18 @@ export async function GET(request: NextRequest) {
         statusCode: 500,
         timestamp: new Date().toISOString(),
       } satisfies APIError,
-      { status: 500 },
+      { status: 500, headers: rateLimitHeaders(limit) },
     );
+  }
+
+  if (parsedQuery.data.format === "plain") {
+    return new NextResponse(payload.ip, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        ...rateLimitHeaders(limit),
+      },
+    });
   }
 
   if (parsedQuery.data.format === "text") {
@@ -89,6 +100,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-store, no-cache, must-revalidate",
+        ...rateLimitHeaders(limit),
       },
     });
   }
@@ -97,6 +109,7 @@ export async function GET(request: NextRequest) {
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",
       "X-Content-Type-Options": "nosniff",
+      ...rateLimitHeaders(limit),
     },
   });
 }
