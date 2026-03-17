@@ -4,10 +4,15 @@ import { ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useWebRTCLeak } from "@/hooks/use-webrtc-leak";
+import type { WebRTCLeakResult } from "@/types";
 
-export function WebRTCLeakCard() {
-  const { result, scanning, scan } = useWebRTCLeak();
+interface WebRTCLeakCardProps {
+  result: WebRTCLeakResult;
+  scanning: boolean;
+  onScan: () => void;
+}
+
+export function WebRTCLeakCard({ result, scanning, onScan }: WebRTCLeakCardProps) {
   const hasRun = result.supported || result.error !== null;
 
   return (
@@ -72,7 +77,7 @@ export function WebRTCLeakCard() {
           </div>
         )}
 
-        <Button variant="outline" className="w-full" disabled={scanning} onClick={scan}>
+        <Button variant="outline" className="w-full" disabled={scanning} onClick={onScan}>
           {scanning ? "Scanning…" : hasRun ? "Re-scan" : "Run WebRTC Leak Test"}
         </Button>
       </CardContent>
