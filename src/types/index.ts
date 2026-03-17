@@ -110,6 +110,21 @@ export interface WebRTCLeakResult {
   error: string | null;
 }
 
+export interface PrivacyCheckResult {
+  id: string;
+  label: string;
+  status: "pass" | "warn" | "fail";
+  detail: string;
+  weight: number;
+}
+
+export interface PrivacyScore {
+  overall: number;
+  grade: "A+" | "A" | "B" | "C" | "D" | "F";
+  checks: PrivacyCheckResult[];
+  consistencyIssues: string[];
+}
+
 export interface HistoryEntry {
   id: string;
   ip: string;

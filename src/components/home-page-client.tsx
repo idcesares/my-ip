@@ -10,6 +10,7 @@ import { InfoGrid } from "@/components/info-grid";
 import { IPAddressCard } from "@/components/ip-address-card";
 import { LogoMark } from "@/components/logo-mark";
 import { PrivacyAccordion } from "@/components/privacy-accordion";
+import { PrivacyScoreCard } from "@/components/privacy-score-card";
 import { WebRTCLeakCard } from "@/components/webrtc-leak-card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -20,12 +21,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBrowserDiagnostics } from "@/hooks/use-browser-diagnostics";
 import { useHistory } from "@/hooks/use-history";
 import { useIPInfo } from "@/hooks/use-ip-info";
+import { usePrivacyScore } from "@/hooks/use-privacy-score";
+import { useWebRTCLeak } from "@/hooks/use-webrtc-leak";
 
 export function HomePageClient() {
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
   const { data: ipInfo, error, isLoading, mutate, fetchGeo } = useIPInfo();
   const diagnostics = useBrowserDiagnostics(showAdvancedMetrics);
   const { history, add, clear } = useHistory();
+  const webrtc = useWebRTCLeak();
+  const privacyScore = usePrivacyScore(ipInfo ?? null, diagnostics, webrtc.result);
   const lastRecordedIp = useRef<string | null>(null);
 
   useEffect(() => {
@@ -128,7 +133,9 @@ export function HomePageClient() {
           onToggleAdvanced={() => setShowAdvancedMetrics((value) => !value)}
         />
 
-        <WebRTCLeakCard />
+        <WebRTCLeakCard result={webrtc.result} scanning={webrtc.scanning} onScan={webrtc.scan} />
+
+        {privacyScore && <PrivacyScoreCard score={privacyScore} />}
 
         {ipInfo && (
           <Tabs defaultValue="history">
