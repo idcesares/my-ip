@@ -58,11 +58,11 @@ function runIPChecks(ip: IPInfo): PrivacyCheckResult[] {
   results.push(
     check(
       "relay",
-      "Proxy / VPN Detection",
+      "Request Relay Detection",
       ip.relayLikely ? "pass" : "warn",
       ip.relayLikely
-        ? "Traffic appears to be relayed through a proxy or VPN"
-        : "No proxy or VPN detected — your real IP may be exposed",
+        ? "Request was relayed through a proxy or load balancer"
+        : "Direct connection detected — no intermediary relay",
       10
     )
   );
@@ -167,36 +167,76 @@ function runSecurityHeaderChecks(
   const headers = diag.security.responseHeaders;
   const results: PrivacyCheckResult[] = [];
 
-  if (headers.csp !== null) {
-    results.push(
-      check(
-        "csp",
-        "Content Security Policy",
-        headers.csp ? "pass" : "warn",
-        headers.csp
-          ? "CSP header is present — protects against XSS"
-          : "No CSP header detected",
-        8
-      )
-    );
-  }
+  results.push(
+    check(
+      "csp",
+      "Content Security Policy",
+      headers.csp ? "pass" : "warn",
+      headers.csp
+        ? "CSP header is present — protects against XSS"
+        : "No CSP header detected",
+      8
+    )
+  );
 
-  if (headers.xFrameOptions !== null) {
-    results.push(
-      check(
-        "x-frame",
-        "Clickjacking Protection",
-        headers.xFrameOptions ? "pass" : "warn",
-        headers.xFrameOptions
-          ? `X-Frame-Options: ${headers.xFrameOptions}`
-          : "No X-Frame-Options — page could be embedded in iframes",
-        5
-      )
-    );
-  }
+  results.push(
+    check(
+      "x-frame",
+      "Clickjacking Protection",
+      headers.xFrameOptions ? "pass" : "warn",
+      headers.xFrameOptions
+        ? `X-Frame-Options: ${headers.xFrameOptions}`
+        : "No X-Frame-Options — page could be embedded in iframes",
+      5
+    )
+  );
 
   return results;
 }
+
+const COUNTRY_LANG_MAP: Record<string, string[]> = {
+  us: ["en"],
+  gb: ["en"],
+  au: ["en"],
+  ca: ["en", "fr"],
+  fr: ["fr"],
+  de: ["de"],
+  es: ["es"],
+  it: ["it"],
+  pt: ["pt"],
+  br: ["pt"],
+  jp: ["ja"],
+  kr: ["ko"],
+  cn: ["zh"],
+  tw: ["zh"],
+  ru: ["ru"],
+  nl: ["nl"],
+  se: ["sv"],
+  no: ["no", "nb", "nn"],
+  dk: ["da"],
+  fi: ["fi"],
+  pl: ["pl"],
+  cz: ["cs"],
+  tr: ["tr"],
+  th: ["th"],
+  vn: ["vi"],
+  id: ["id"],
+  my: ["ms"],
+  ph: ["tl", "en"],
+  in: ["hi", "en"],
+  sa: ["ar"],
+  ae: ["ar"],
+  eg: ["ar"],
+  il: ["he"],
+  ua: ["uk"],
+  gr: ["el"],
+  ro: ["ro"],
+  hu: ["hu"],
+  bg: ["bg"],
+  hr: ["hr"],
+  sk: ["sk"],
+  si: ["sl"],
+};
 
 function detectConsistencyIssues(
   ip: IPInfo,
@@ -217,64 +257,13 @@ function detectConsistencyIssues(
   if (ip.location?.country && diag.languages.length > 0) {
     const countryLower = ip.location.country.toLowerCase();
     const primaryLang = diag.languages[0].toLowerCase();
-
-    const countryLangMap: Record<string, string[]> = {
-      us: ["en"],
-      gb: ["en"],
-      au: ["en"],
-      ca: ["en", "fr"],
-      fr: ["fr"],
-      de: ["de"],
-      es: ["es"],
-      it: ["it"],
-      pt: ["pt"],
-      br: ["pt"],
-      jp: ["ja"],
-      kr: ["ko"],
-      cn: ["zh"],
-      tw: ["zh"],
-      ru: ["ru"],
-      nl: ["nl"],
-      se: ["sv"],
-      no: ["no", "nb", "nn"],
-      dk: ["da"],
-      fi: ["fi"],
-      pl: ["pl"],
-      cz: ["cs"],
-      tr: ["tr"],
-      th: ["th"],
-      vn: ["vi"],
-      id: ["id"],
-      my: ["ms"],
-      ph: ["tl", "en"],
-      in: ["hi", "en"],
-      sa: ["ar"],
-      ae: ["ar"],
-      eg: ["ar"],
-      il: ["he"],
-      ua: ["uk"],
-      gr: ["el"],
-      ro: ["ro"],
-      hu: ["hu"],
-      bg: ["bg"],
-      hr: ["hr"],
-      sk: ["sk"],
-      si: ["sl"],
-    };
-
     const langPrefix = primaryLang.split("-")[0];
-    const expectedLangs = countryLangMap[countryLower];
+    const expectedLangs = COUNTRY_LANG_MAP[countryLower];
     if (expectedLangs && !expectedLangs.includes(langPrefix)) {
       issues.push(
         `Language mismatch: IP is in ${ip.location.country.toUpperCase()} but browser language is "${diag.languages[0]}"`
       );
     }
-  }
-
-  if (ip.relayLikely && ip.category === "Public") {
-    issues.push(
-      "Traffic appears relayed (proxy/VPN) but IP is categorized as public — verify your VPN is working correctly"
-    );
   }
 
   return issues;

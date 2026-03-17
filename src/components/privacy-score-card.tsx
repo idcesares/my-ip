@@ -16,7 +16,9 @@ interface PrivacyScoreCardProps {
   score: PrivacyScore;
 }
 
-const GRADE_STYLES: Record<string, string> = {
+type Grade = PrivacyScore["grade"];
+
+const GRADE_STYLES: Record<Grade, string> = {
   "A+": "text-emerald-500",
   A: "text-emerald-500",
   B: "text-sky-500",
@@ -25,7 +27,7 @@ const GRADE_STYLES: Record<string, string> = {
   F: "text-red-500",
 };
 
-const RING_COLORS: Record<string, string> = {
+const RING_COLORS: Record<Grade, string> = {
   "A+": "stroke-emerald-500",
   A: "stroke-emerald-500",
   B: "stroke-sky-500",
@@ -34,7 +36,7 @@ const RING_COLORS: Record<string, string> = {
   F: "stroke-red-500",
 };
 
-function ScoreRing({ score, grade }: { score: number; grade: string }) {
+function ScoreRing({ score, grade }: { score: number; grade: Grade }) {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -59,11 +61,11 @@ function ScoreRing({ score, grade }: { score: number; grade: string }) {
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className={cn("transition-all duration-700", RING_COLORS[grade] ?? "stroke-gray-500")}
+          className={cn("transition-all duration-700", RING_COLORS[grade])}
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className={cn("text-2xl font-bold", GRADE_STYLES[grade] ?? "text-gray-500")}>
+        <span className={cn("text-2xl font-bold", GRADE_STYLES[grade])}>
           {grade}
         </span>
         <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{score}/100</span>

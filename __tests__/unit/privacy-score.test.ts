@@ -225,6 +225,23 @@ describe("computePrivacyScore", () => {
     expect(dntCheck!.status).toBe("pass");
   });
 
+  it("always includes CSP and X-Frame-Options checks even when headers are null", () => {
+    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), null);
+    const cspCheck = result!.checks.find((c) => c.id === "csp");
+    const xFrameCheck = result!.checks.find((c) => c.id === "x-frame");
+    expect(cspCheck).toBeDefined();
+    expect(cspCheck!.status).toBe("warn");
+    expect(xFrameCheck).toBeDefined();
+    expect(xFrameCheck!.status).toBe("warn");
+  });
+
+  it("does not flag relay + public IP as a consistency issue", () => {
+    const ip = makeIPInfo({ relayLikely: true, category: "Public" });
+    const result = computePrivacyScore(ip, makeDiagnostics(), null);
+    const relayIssue = result!.consistencyIssues.find((i) => i.includes("relayed"));
+    expect(relayIssue).toBeUndefined();
+  });
+
   it("DNT disabled gives warn", () => {
     const diag = makeDiagnostics({
       preferences: {
