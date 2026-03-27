@@ -14,6 +14,12 @@ export function useIPInfo() {
   const swr = useSWR<IPInfo>("/api/ip?format=json", fetcher, {
     refreshInterval: 60_000,
     revalidateOnFocus: false,
+    errorRetryCount: 3,
+    onErrorRetry: (_err, _key, _config, revalidate, { retryCount }) => {
+      if (retryCount >= 3) return;
+      const delay = Math.min(1000 * 2 ** retryCount, 30_000);
+      setTimeout(() => void revalidate({ retryCount }), delay);
+    },
   });
 
   const fetchGeo = useCallback(async () => {

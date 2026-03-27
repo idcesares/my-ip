@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import { AlertTriangle, Globe, MapPin, Radar, ShieldAlert, Waypoints } from "lucide-react";
+import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,16 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               onClick={async () => {
                 setGeoLoading(true);
                 try {
-                  await onFetchGeo();
+                  const result = await onFetchGeo();
+                  if (!result.location) {
+                    toast.error("Location unavailable", {
+                      description: "All geolocation providers failed. Try again later.",
+                    });
+                  }
+                } catch {
+                  toast.error("Location lookup failed", {
+                    description: "Could not reach geolocation services.",
+                  });
                 } finally {
                   setGeoLoading(false);
                 }
@@ -141,9 +151,9 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               {data.warnings.map((warning) => (
                 <li key={warning} className="flex items-start gap-2">
                   {warning.toLowerCase().includes("vpn") ? (
-                    <ShieldAlert className="mt-0.5 h-4 w-4" />
+                    <ShieldAlert className="mt-0.5 h-4 w-4" aria-hidden="true" />
                   ) : (
-                    <AlertTriangle className="mt-0.5 h-4 w-4" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4" aria-hidden="true" />
                   )}
                   <span>{warning}</span>
                 </li>

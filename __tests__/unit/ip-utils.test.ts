@@ -122,6 +122,26 @@ describe("ip-utils", () => {
     it("handles empty string", () => {
       expect(stripPort("")).toBe("");
     });
+
+    it("strips IPv6 zone ID", () => {
+      expect(stripPort("fe80::1%eth0")).toBe("fe80::1");
+      expect(stripPort("fe80::1%25eth0")).toBe("fe80::1");
+    });
+
+    it("strips zone ID from bracketed IPv6 with port", () => {
+      expect(stripPort("[fe80::1%25eth0]:443")).toBe("fe80::1");
+    });
+  });
+
+  describe("detectIPVersion — edge cases", () => {
+    it("detects IPv4-mapped IPv6 as IPv6", () => {
+      expect(detectIPVersion("::ffff:192.168.1.1")).toBe("IPv6");
+    });
+
+    it("handles IPv6 with stripped zone ID", () => {
+      // After zone ID stripping, fe80::1 should be valid IPv6
+      expect(detectIPVersion("fe80::1%eth0")).toBe("IPv6");
+    });
   });
 
   describe("getIPCategory", () => {

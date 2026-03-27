@@ -4,6 +4,14 @@ import { useCallback, useState } from "react";
 import { z } from "zod";
 import type { HistoryEntry } from "@/types";
 
+function generateId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers without crypto.randomUUID
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 const KEY = "ip-history";
 const MAX_ITEMS = 10;
 
@@ -45,7 +53,7 @@ export function useHistory() {
 
   const add = useCallback((item: Omit<HistoryEntry, "id">) => {
     setHistory((prev) => {
-      const next = [{ ...item, id: crypto.randomUUID() }, ...prev].slice(0, MAX_ITEMS);
+      const next = [{ ...item, id: generateId() }, ...prev].slice(0, MAX_ITEMS);
       localStorage.setItem(KEY, JSON.stringify(next));
       return next;
     });

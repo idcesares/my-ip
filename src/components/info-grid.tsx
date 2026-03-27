@@ -52,7 +52,7 @@ export const InfoGrid = memo(function InfoGrid({
 }) {
   if (!data) {
     return (
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div role="status" aria-busy="true" aria-label="Loading diagnostics" className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         <Card><CardContent className="h-44" /></Card>
         <Card><CardContent className="h-44" /></Card>
         <Card><CardContent className="h-44" /></Card>

@@ -78,18 +78,19 @@ h6 {
 
 .skip-link {
   position: absolute;
-  left: -999px;
-  top: 0;
+  inset-inline-start: 0.75rem;
+  top: 0.75rem;
   z-index: 999;
   border-radius: 999px;
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   padding: 0.5rem 0.9rem;
+  transform: translateY(-200%);
+  transition: transform 0.15s ease-in-out;
 }
 
 .skip-link:focus {
-  left: 0.75rem;
-  top: 0.75rem;
+  transform: translateY(0);
 }
 
 .grain-overlay {
@@ -111,7 +112,7 @@ h6 {
   border: 1px solid hsl(var(--border) / 0.85);
   background: linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.78));
   box-shadow:
-    0 12px 30px -18px hsl(212 86% 41% / 0.42),
+    0 12px 30px -18px hsl(var(--primary) / 0.42),
     inset 0 1px 0 hsl(0 0% 100% / 0.35);
   backdrop-filter: blur(10px);
 }
@@ -120,9 +121,9 @@ h6 {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
 }

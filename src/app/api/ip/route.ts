@@ -55,10 +55,11 @@ export async function GET(request: NextRequest) {
   });
 
   if (!parsedQuery.success) {
+    const issues = parsedQuery.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
     return NextResponse.json(
       {
         error: "INVALID_QUERY",
-        message: "Invalid query parameters.",
+        message: `Invalid query parameters: ${issues.join("; ")}`,
         statusCode: 400,
         timestamp: new Date().toISOString(),
       } satisfies APIError,
