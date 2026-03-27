@@ -83,11 +83,10 @@ function pickCandidate(raw: Awaited<ReturnType<typeof headers>>) {
   return { ip: "0.0.0.0", source: "fallback" as const };
 }
 
-type GeoResult = { location: GeoLocation | null; isp: ISPInfo | null; providerUsed: string | null };
+type GeoResult = { location: GeoLocation | null; isp: ISPInfo | null };
 
 function toGeoResult(
   parsed: { city: string | null; region: string | null; country: string | null; timezone: string | null; latitude: number | null; longitude: number | null; isp: string | null; asn: string | null; org: string | null },
-  provider: string,
 ): GeoResult {
   return {
     location: {
@@ -98,7 +97,6 @@ function toGeoResult(
       coordinates: { latitude: parsed.latitude, longitude: parsed.longitude },
     },
     isp: { name: parsed.isp, asn: parsed.asn, organization: parsed.org },
-    providerUsed: provider,
   };
 }
 
@@ -144,12 +142,12 @@ async function fetchFromIpapi(ip: string): Promise<GeoResult> {
     throw new Error("ipapi.co returned invalid data");
   }
 
-  return toGeoResult(parsed.data, "ipapi.co");
+  return toGeoResult(parsed.data);
 }
 
 async function fetchFromIpApi(ip: string): Promise<GeoResult> {
   const response = await fetchWithTimeout(
-    `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,message,city,regionName,countryCode,timezone,lat,lon,isp,as,org`,
+    `https://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,message,city,regionName,countryCode,timezone,lat,lon,isp,as,org`,
     3_500,
     "whats-my-ip-app/1.0",
   );
@@ -180,10 +178,10 @@ async function fetchFromIpApi(ip: string): Promise<GeoResult> {
     throw new Error("ip-api.com returned invalid data");
   }
 
-  return toGeoResult(parsed.data, "ip-api.com");
+  return toGeoResult(parsed.data);
 }
 
-const GEO_NULL: GeoResult = { location: null, isp: null, providerUsed: null };
+const GEO_NULL: GeoResult = { location: null, isp: null };
 
 async function resolveGeo(ip: string): Promise<GeoResult> {
   const provider = process.env.GEOLOCATION_PROVIDER ?? "ipapi";
@@ -192,11 +190,18 @@ async function resolveGeo(ip: string): Promise<GeoResult> {
     return GEO_NULL;
   }
 
-  // Try primary provider, then fallback
-  const providers: Array<{ name: string; fn: (ip: string) => Promise<GeoResult> }> = [
+  // Try primary provider, then fallback. Allow GEOLOCATION_PROVIDER to influence ordering.
+  const baseProviders: Array<{ name: string; fn: (ip: string) => Promise<GeoResult> }> = [
     { name: "ipapi.co", fn: fetchFromIpapi },
     { name: "ip-api.com", fn: fetchFromIpApi },
   ];
+
+  const normalizedProvider = provider.toLowerCase();
+
+  const providers: Array<{ name: string; fn: (ip: string) => Promise<GeoResult> }> =
+    normalizedProvider === "ip-api" || normalizedProvider === "ip-api.com"
+      ? [baseProviders[1], baseProviders[0]]
+      : baseProviders;
 
   for (const { name, fn } of providers) {
     try {

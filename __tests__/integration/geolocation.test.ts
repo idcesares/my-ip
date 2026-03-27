@@ -71,7 +71,7 @@ describe("geolocation resolution", () => {
       if (urlStr.startsWith("https://ipapi.co/")) {
         return new Response("Rate limited", { status: 429 });
       }
-      if (urlStr.startsWith("http://ip-api.com/")) {
+      if (urlStr.startsWith("https://ip-api.com/")) {
         return new Response(JSON.stringify(mockIpApiSuccess()), { status: 200 });
       }
       return new Response("", { status: 500 });
@@ -105,7 +105,7 @@ describe("geolocation resolution", () => {
       if (urlStr.startsWith("https://ipapi.co/")) {
         return new Response("not json", { status: 200, headers: { "Content-Type": "text/plain" } });
       }
-      if (urlStr.startsWith("http://ip-api.com/")) {
+      if (urlStr.startsWith("https://ip-api.com/")) {
         return new Response(JSON.stringify(mockIpApiSuccess()), { status: 200 });
       }
       return new Response("", { status: 500 });
@@ -123,7 +123,7 @@ describe("geolocation resolution", () => {
       if (urlStr.startsWith("https://ipapi.co/")) {
         return new Response("Error", { status: 500 });
       }
-      if (urlStr.startsWith("http://ip-api.com/")) {
+      if (urlStr.startsWith("https://ip-api.com/")) {
         return new Response(JSON.stringify({ status: "fail", message: "invalid query" }), { status: 200 });
       }
       return new Response("", { status: 500 });
