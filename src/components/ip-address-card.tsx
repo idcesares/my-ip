@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import { AlertTriangle, Globe, MapPin, Radar, ShieldAlert, Waypoints } from "lucide-react";
+import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,16 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               onClick={async () => {
                 setGeoLoading(true);
                 try {
-                  await onFetchGeo();
+                  const result = await onFetchGeo();
+                  if (!result.location) {
+                    toast.error("Location unavailable", {
+                      description: "All geolocation providers failed. Try again later.",
+                    });
+                  }
+                } catch {
+                  toast.error("Location lookup failed", {
+                    description: "Could not reach geolocation services.",
+                  });
                 } finally {
                   setGeoLoading(false);
                 }

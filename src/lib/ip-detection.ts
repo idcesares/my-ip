@@ -83,77 +83,133 @@ function pickCandidate(raw: Awaited<ReturnType<typeof headers>>) {
   return { ip: "0.0.0.0", source: "fallback" as const };
 }
 
-async function resolveGeo(ip: string): Promise<{ location: GeoLocation | null; isp: ISPInfo | null }> {
+type GeoResult = { location: GeoLocation | null; isp: ISPInfo | null; providerUsed: string | null };
+
+function toGeoResult(
+  parsed: { city: string | null; region: string | null; country: string | null; timezone: string | null; latitude: number | null; longitude: number | null; isp: string | null; asn: string | null; org: string | null },
+  provider: string,
+): GeoResult {
+  return {
+    location: {
+      city: parsed.city,
+      region: parsed.region,
+      country: parsed.country,
+      timezone: parsed.timezone,
+      coordinates: { latitude: parsed.latitude, longitude: parsed.longitude },
+    },
+    isp: { name: parsed.isp, asn: parsed.asn, organization: parsed.org },
+    providerUsed: provider,
+  };
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number, userAgent: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      headers: { "User-Agent": userAgent },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchFromIpapi(ip: string): Promise<GeoResult> {
+  const response = await fetchWithTimeout(
+    `https://ipapi.co/${encodeURIComponent(ip)}/json/`,
+    3_500,
+    "whats-my-ip-app/1.0",
+  );
+
+  if (!response.ok) {
+    throw new Error(`ipapi.co returned ${response.status}`);
+  }
+
+  const raw = await response.json();
+  const parsed = geoSchema.safeParse({
+    city: raw.city ?? null,
+    region: raw.region ?? null,
+    country: raw.country_code ?? null,
+    timezone: raw.timezone ?? null,
+    latitude: raw.latitude ?? null,
+    longitude: raw.longitude ?? null,
+    isp: raw.org ?? null,
+    asn: raw.asn ?? null,
+    org: raw.org ?? null,
+  });
+
+  if (!parsed.success) {
+    throw new Error("ipapi.co returned invalid data");
+  }
+
+  return toGeoResult(parsed.data, "ipapi.co");
+}
+
+async function fetchFromIpApi(ip: string): Promise<GeoResult> {
+  const response = await fetchWithTimeout(
+    `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,message,city,regionName,countryCode,timezone,lat,lon,isp,as,org`,
+    3_500,
+    "whats-my-ip-app/1.0",
+  );
+
+  if (!response.ok) {
+    throw new Error(`ip-api.com returned ${response.status}`);
+  }
+
+  const raw = await response.json();
+
+  if (raw.status === "fail") {
+    throw new Error(`ip-api.com: ${raw.message ?? "lookup failed"}`);
+  }
+
+  const parsed = geoSchema.safeParse({
+    city: raw.city ?? null,
+    region: raw.regionName ?? null,
+    country: raw.countryCode ?? null,
+    timezone: raw.timezone ?? null,
+    latitude: raw.lat ?? null,
+    longitude: raw.lon ?? null,
+    isp: raw.isp ?? null,
+    asn: raw.as ?? null,
+    org: raw.org ?? null,
+  });
+
+  if (!parsed.success) {
+    throw new Error("ip-api.com returned invalid data");
+  }
+
+  return toGeoResult(parsed.data, "ip-api.com");
+}
+
+const GEO_NULL: GeoResult = { location: null, isp: null, providerUsed: null };
+
+async function resolveGeo(ip: string): Promise<GeoResult> {
   const provider = process.env.GEOLOCATION_PROVIDER ?? "ipapi";
 
   if (provider === "none") {
-    return { location: null, isp: null };
+    return GEO_NULL;
   }
 
-  if (provider === "ipapi") {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3_500);
+  // Try primary provider, then fallback
+  const providers: Array<{ name: string; fn: (ip: string) => Promise<GeoResult> }> = [
+    { name: "ipapi.co", fn: fetchFromIpapi },
+    { name: "ip-api.com", fn: fetchFromIpApi },
+  ];
 
+  for (const { name, fn } of providers) {
     try {
-      const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-        headers: {
-          "User-Agent": "whats-my-ip-app/1.0",
-        },
-        cache: "no-store",
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        return { location: null, isp: null };
-      }
-
-      const raw = await response.json();
-      const parsed = geoSchema.safeParse({
-        city: raw.city ?? null,
-        region: raw.region ?? null,
-        country: raw.country_code ?? null,
-        timezone: raw.timezone ?? null,
-        latitude: raw.latitude ?? null,
-        longitude: raw.longitude ?? null,
-        isp: raw.org ?? null,
-        asn: raw.asn ?? null,
-        org: raw.org ?? null,
-      });
-
-      if (!parsed.success) {
-        return { location: null, isp: null };
-      }
-
-      return {
-        location: {
-          city: parsed.data.city,
-          region: parsed.data.region,
-          country: parsed.data.country,
-          timezone: parsed.data.timezone,
-          coordinates: {
-            latitude: parsed.data.latitude,
-            longitude: parsed.data.longitude,
-          },
-        },
-        isp: {
-          name: parsed.data.isp,
-          asn: parsed.data.asn,
-          organization: parsed.data.org,
-        },
-      };
+      return await fn(ip);
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        console.warn(`[geo] Timeout fetching geolocation for ${ip.slice(0, 3)}***`);
-      } else {
-        console.warn("[geo] Geolocation lookup failed:", error instanceof Error ? error.message : "unknown error");
-      }
-      return { location: null, isp: null };
-    } finally {
-      clearTimeout(timeout);
+      const reason = error instanceof DOMException && error.name === "AbortError"
+        ? "timeout"
+        : error instanceof Error ? error.message : "unknown error";
+      console.warn(`[geo] ${name} failed: ${reason}`);
     }
   }
 
-  return { location: null, isp: null };
+  return GEO_NULL;
 }
 
 export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPInfo> {
@@ -185,7 +241,7 @@ export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPIn
     isp = geo.isp;
 
     if (!location) {
-      warnings.push("Geolocation lookup failed or returned no data.");
+      warnings.push("Geolocation lookup failed — all providers were unreachable or returned no data.");
     }
   }
 
