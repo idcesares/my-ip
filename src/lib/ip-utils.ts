@@ -1,14 +1,21 @@
 import ipaddr from "ipaddr.js";
 
+/** Strip optional port suffix and IPv6 zone IDs (e.g. `%eth0`). */
 export function stripPort(value: string): string {
-  const ip = value.trim();
+  let ip = value.trim();
 
-  if (/^\[[0-9a-fA-F:]+\]:\d+$/.test(ip)) {
-    return ip.slice(1, ip.lastIndexOf("]"));
+  // Bracketed IPv6 with port — [2001:db8::1]:443 or [fe80::1%25eth0]:443
+  if (/^\[.+\]:\d+$/.test(ip)) {
+    ip = ip.slice(1, ip.lastIndexOf("]"));
+  } else if (ip.includes(".") && ip.includes(":")) {
+    // IPv4 with port — 1.2.3.4:3000
+    ip = ip.slice(0, ip.lastIndexOf(":"));
   }
 
-  if (ip.includes(".") && ip.includes(":")) {
-    return ip.slice(0, ip.lastIndexOf(":"));
+  // Strip IPv6 zone ID (e.g. fe80::1%eth0 or fe80::1%25eth0)
+  const zoneIndex = ip.indexOf("%");
+  if (zoneIndex !== -1) {
+    ip = ip.slice(0, zoneIndex);
   }
 
   return ip;

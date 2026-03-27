@@ -15,6 +15,7 @@ export function middleware() {
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
+      "upgrade-insecure-requests",
     ].join("; ") + ";",
   );
   response.headers.set("X-Content-Type-Options", "nosniff");

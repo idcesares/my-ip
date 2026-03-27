@@ -141,7 +141,12 @@ async function resolveGeo(ip: string): Promise<{ location: GeoLocation | null; i
           organization: parsed.data.org,
         },
       };
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        console.warn(`[geo] Timeout fetching geolocation for ${ip.slice(0, 3)}***`);
+      } else {
+        console.warn("[geo] Geolocation lookup failed:", error instanceof Error ? error.message : "unknown error");
+      }
       return { location: null, isp: null };
     } finally {
       clearTimeout(timeout);
@@ -207,8 +212,8 @@ export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPIn
     location,
     isp,
     request: {
-      userAgent: hdrs.get("user-agent") ?? "Unknown",
-      language: hdrs.get("accept-language")?.split(",")[0] ?? "Unknown",
+      userAgent: (hdrs.get("user-agent") ?? "Unknown").slice(0, 512),
+      language: (hdrs.get("accept-language")?.split(",")[0] ?? "Unknown").slice(0, 64),
       protocol: hdrs.get("x-forwarded-proto") === "https" ? "https" : "http",
     },
   };

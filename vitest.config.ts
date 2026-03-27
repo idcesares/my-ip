@@ -8,6 +8,13 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./__tests__/setup.ts",
+    testTimeout: 10_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      include: ["src/**/*.ts", "src/**/*.tsx"],
+      exclude: ["src/components/ui/**"],
+    },
   },
   resolve: {
     alias: {
