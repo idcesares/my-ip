@@ -96,7 +96,7 @@ export function HomePageClient() {
 
       <section className="space-y-6">
         {isLoading && (
-          <Card>
+          <Card role="status" aria-busy="true" aria-label="Loading IP information">
             <CardHeader>
               <CardTitle>Detecting IP</CardTitle>
             </CardHeader>
@@ -109,12 +109,15 @@ export function HomePageClient() {
         )}
 
         {error && (
-          <Card>
+          <Card role="alert">
             <CardHeader>
               <CardTitle>Request Failed</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4 text-sm text-[hsl(var(--destructive))]">Unable to fetch IP information right now.</p>
+              <p className="mb-4 text-sm text-[hsl(var(--destructive))]">
+                Unable to fetch IP information right now.{" "}
+                {error instanceof Error ? error.message : "An unexpected error occurred."}
+              </p>
               <Button onClick={() => mutate()}>Retry</Button>
             </CardContent>
           </Card>

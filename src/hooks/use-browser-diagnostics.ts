@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { BrowserDiagnostics } from "@/types";
 
 type NetworkInfo = {
@@ -256,5 +256,5 @@ export function useBrowserDiagnostics(enableAdvanced: boolean) {
     };
   }, [collectBase, collectEnriched, enableAdvanced]);
 
-  return useMemo(() => data, [data]);
+  return data;
 }

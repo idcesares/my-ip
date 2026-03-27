@@ -141,9 +141,9 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               {data.warnings.map((warning) => (
                 <li key={warning} className="flex items-start gap-2">
                   {warning.toLowerCase().includes("vpn") ? (
-                    <ShieldAlert className="mt-0.5 h-4 w-4" />
+                    <ShieldAlert className="mt-0.5 h-4 w-4" aria-hidden="true" />
                   ) : (
-                    <AlertTriangle className="mt-0.5 h-4 w-4" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4" aria-hidden="true" />
                   )}
                   <span>{warning}</span>
                 </li>
