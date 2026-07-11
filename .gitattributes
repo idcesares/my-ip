@@ -1,0 +1,13 @@
+# Normalize all text files to LF regardless of the checkout OS so that
+# `npm run format` (Prettier, which defaults to LF) matches what's on disk
+# whether the repo was cloned on Windows, macOS, or Linux CI.
+* text=auto eol=lf
+
+# Binary assets must never go through line-ending normalization.
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.woff binary
+*.woff2 binary
