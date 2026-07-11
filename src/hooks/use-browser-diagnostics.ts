@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  bucketLogicalProcessors,
+  countScriptVisibleCookies,
+  normalizeDeviceMemory,
+} from "@/lib/browser-metrics";
 import type { BrowserDiagnostics } from "@/types";
+import type { BrowserDiagnosticsSnapshot } from "@/lib/privacy-score";
 
 type NetworkInfo = {
   effectiveType?: string;
@@ -15,6 +21,16 @@ type NetworkInfo = {
 };
 
 type PermissionSummary = BrowserDiagnostics["privacy"]["permissions"];
+type ResponseHeaders = BrowserDiagnostics["security"]["responseHeaders"];
+
+const EMPTY_HEADERS: ResponseHeaders = {
+  csp: null,
+  referrerPolicy: null,
+  permissionsPolicy: null,
+  xFrameOptions: null,
+  xContentTypeOptions: null,
+  cacheControl: null,
+};
 
 function getConnection(): NetworkInfo | null {
   if (typeof navigator === "undefined") return null;
@@ -26,40 +42,23 @@ function getConnection(): NetworkInfo | null {
   return nav.connection ?? nav.mozConnection ?? nav.webkitConnection ?? null;
 }
 
-function bucketMemory(memory: number | undefined): string | null {
-  if (typeof memory !== "number") return null;
-  if (memory <= 2) return "<=2GB";
-  if (memory <= 4) return "4GB";
-  if (memory <= 8) return "8GB";
-  return ">=16GB";
-}
-
-function bucketCpuThreads(threads: number | undefined): string | null {
-  if (typeof threads !== "number") return null;
-  if (threads <= 2) return "1-2";
-  if (threads <= 4) return "3-4";
-  if (threads <= 8) return "5-8";
-  return "9+";
-}
-
 function getCookieCount(): number {
   if (typeof document === "undefined") return 0;
-  const raw = document.cookie.trim();
-  if (!raw) return 0;
-  return raw.split(";").filter(Boolean).length;
+  return countScriptVisibleCookies(document.cookie);
 }
 
-async function queryPermission(name: PermissionName): Promise<PermissionState | "unsupported" | "error"> {
-  if (typeof navigator === "undefined" || !("permissions" in navigator) || !navigator.permissions?.query) {
+async function queryPermission(
+  name: PermissionName,
+): Promise<PermissionState | "unsupported" | "error"> {
+  if (typeof navigator === "undefined" || !navigator.permissions?.query)
     return "unsupported";
-  }
-
   try {
-    const result = await navigator.permissions.query({ name } as PermissionDescriptor);
+    const result = await navigator.permissions.query({
+      name,
+    } as PermissionDescriptor);
     return result.state;
   } catch (error) {
-    if (error instanceof TypeError) return "unsupported";
-    return "error";
+    return error instanceof TypeError ? "unsupported" : "error";
   }
 }
 
@@ -70,18 +69,20 @@ async function getPermissions(): Promise<PermissionSummary> {
     queryPermission("camera"),
     queryPermission("microphone"),
   ]);
-
   return { notifications, geolocation, camera, microphone };
 }
 
-async function probeApi() {
+async function probeCurrentPage() {
   try {
     const start = performance.now();
-    const response = await fetch("/api/ip?format=json", { cache: "no-store" });
-    const apiRttMs = Math.round(performance.now() - start);
+    const response = await fetch(window.location.pathname || "/", {
+      method: "HEAD",
+      cache: "no-store",
+    });
 
     return {
-      apiRttMs,
+      status: "measured" as const,
+      pageFetchMs: Math.round(performance.now() - start),
       responseHeaders: {
         csp: response.headers.get("content-security-policy"),
         referrerPolicy: response.headers.get("referrer-policy"),
@@ -89,29 +90,23 @@ async function probeApi() {
         xFrameOptions: response.headers.get("x-frame-options"),
         xContentTypeOptions: response.headers.get("x-content-type-options"),
         cacheControl: response.headers.get("cache-control"),
-      },
+      } satisfies ResponseHeaders,
     };
   } catch {
     return {
-      apiRttMs: null,
-      responseHeaders: {
-        csp: null,
-        referrerPolicy: null,
-        permissionsPolicy: null,
-        xFrameOptions: null,
-        xContentTypeOptions: null,
-        cacheControl: null,
-      },
+      status: "unavailable" as const,
+      pageFetchMs: null,
+      responseHeaders: EMPTY_HEADERS,
     };
   }
 }
 
 export function useBrowserDiagnostics(enableAdvanced: boolean) {
-  const [data, setData] = useState<BrowserDiagnostics | null>(null);
+  const [data, setData] = useState<BrowserDiagnosticsSnapshot | null>(null);
   const lastNetworkSignature = useRef<string | null>(null);
   const lastConnectionChangedAt = useRef<string | null>(null);
 
-  const collectBase = useCallback(() => {
+  const collectBase = useCallback((): BrowserDiagnosticsSnapshot => {
     const connection = getConnection();
     const currentSignature = [
       connection?.effectiveType ?? null,
@@ -121,7 +116,10 @@ export function useBrowserDiagnostics(enableAdvanced: boolean) {
       connection?.saveData ?? null,
     ].join("|");
 
-    if (lastNetworkSignature.current && lastNetworkSignature.current !== currentSignature) {
+    if (
+      lastNetworkSignature.current &&
+      lastNetworkSignature.current !== currentSignature
+    ) {
       lastConnectionChangedAt.current = new Date().toISOString();
     }
     lastNetworkSignature.current = currentSignature;
@@ -150,26 +148,30 @@ export function useBrowserDiagnostics(enableAdvanced: boolean) {
         rtt: connection?.rtt ?? null,
         saveData: connection?.saveData ?? null,
         changedAt: lastConnectionChangedAt.current,
-        apiRttMs: null,
+        pageFetchMs: null,
       },
       preferences: {
-        colorScheme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
-        reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        colorScheme: window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light",
+        reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)")
+          .matches,
         highContrast: window.matchMedia("(prefers-contrast: more)").matches,
         touchCapable: navigator.maxTouchPoints > 0,
         maxTouchPoints: navigator.maxTouchPoints,
         cookieEnabled: navigator.cookieEnabled,
-        doNotTrack: navigator.doNotTrack,
       },
       capabilities: {
-        hardwareConcurrencyBucket: bucketCpuThreads(nav.hardwareConcurrency),
-        deviceMemoryBucket: bucketMemory(nav.deviceMemory),
+        hardwareConcurrencyBucket: bucketLogicalProcessors(
+          nav.hardwareConcurrency,
+        ),
+        deviceMemoryGB: normalizeDeviceMemory(nav.deviceMemory),
         pdfViewerEnabled: nav.pdfViewerEnabled ?? null,
         secureContext: window.isSecureContext,
         crossOriginIsolated: window.crossOriginIsolated,
       },
       privacy: {
-        firstPartyCookieCount: getCookieCount(),
+        scriptVisibleCookieCount: getCookieCount(),
         permissions: {
           notifications: "unsupported",
           geolocation: "unsupported",
@@ -179,82 +181,92 @@ export function useBrowserDiagnostics(enableAdvanced: boolean) {
       },
       security: {
         protocol: window.location.protocol,
-        referrerPolicy: null,
-        responseHeaders: {
-          csp: null,
-          referrerPolicy: null,
-          permissionsPolicy: null,
-          xFrameOptions: null,
-          xContentTypeOptions: null,
-          cacheControl: null,
-        },
+        responseHeaders: EMPTY_HEADERS,
+        responseHeadersStatus: "checking",
       },
-    } satisfies BrowserDiagnostics;
+    };
   }, []);
 
-  const collectEnriched = useCallback(async () => {
-    const [permissions, probe] = await Promise.all([getPermissions(), probeApi()]);
-    setData((current) => {
-      if (!current) return current;
-
-      return {
-        ...current,
-        connection: {
-          ...current.connection,
-          apiRttMs: probe.apiRttMs,
-        },
-        privacy: {
-          ...current.privacy,
-          permissions,
-        },
-        security: {
-          ...current.security,
-          responseHeaders: probe.responseHeaders,
-        },
-      };
-    });
+  const refreshHeaderProbe = useCallback(async () => {
+    const probe = await probeCurrentPage();
+    setData((current) =>
+      current
+        ? {
+            ...current,
+            connection: {
+              ...current.connection,
+              pageFetchMs: probe.pageFetchMs,
+            },
+            security: {
+              ...current.security,
+              responseHeaders: probe.responseHeaders,
+              responseHeadersStatus: probe.status,
+            },
+          }
+        : current,
+    );
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let cancelled = false;
-
     const populate = () => {
       const next = collectBase();
-      if (!cancelled) setData(next);
+      setData((current) =>
+        current
+          ? {
+              ...next,
+              connection: {
+                ...next.connection,
+                pageFetchMs: current.connection.pageFetchMs,
+              },
+              privacy: {
+                ...next.privacy,
+                permissions: current.privacy.permissions,
+              },
+              security: current.security,
+            }
+          : next,
+      );
     };
 
-    const populateWithEnrichment = () => {
+    const onOnline = () => {
       populate();
-      if (enableAdvanced) {
-        void collectEnriched();
-      }
+      void refreshHeaderProbe();
     };
 
-    populateWithEnrichment();
+    const initialFrame = window.requestAnimationFrame(() => {
+      populate();
+      void refreshHeaderProbe();
+    });
     window.addEventListener("resize", populate);
-    window.addEventListener("online", populateWithEnrichment);
+    window.addEventListener("online", onOnline);
     window.addEventListener("offline", populate);
 
     const connection = getConnection();
-    const onConnectionChange = () => {
-      if (enableAdvanced) {
-        populateWithEnrichment();
-      } else {
-        populate();
-      }
+    connection?.addEventListener?.("change", populate);
+    return () => {
+      window.cancelAnimationFrame(initialFrame);
+      window.removeEventListener("resize", populate);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", populate);
+      connection?.removeEventListener?.("change", populate);
     };
-    connection?.addEventListener?.("change", onConnectionChange);
+  }, [collectBase, refreshHeaderProbe]);
 
+  useEffect(() => {
+    if (!enableAdvanced) return;
+    let cancelled = false;
+    void getPermissions().then((permissions) => {
+      if (cancelled) return;
+      setData((current) =>
+        current
+          ? { ...current, privacy: { ...current.privacy, permissions } }
+          : current,
+      );
+    });
     return () => {
       cancelled = true;
-      window.removeEventListener("resize", populate);
-      window.removeEventListener("online", populateWithEnrichment);
-      window.removeEventListener("offline", populate);
-      connection?.removeEventListener?.("change", onConnectionChange);
     };
-  }, [collectBase, collectEnriched, enableAdvanced]);
+  }, [enableAdvanced]);
 
   return useMemo(() => data, [data]);
 }

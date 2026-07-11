@@ -1,196 +1,251 @@
-import { headers } from "next/headers";
-import { detectIPVersion, getIPCategory, isPrivateIP, stripPort } from "@/lib/ip-utils";
-import { geoSchema } from "@/lib/schemas";
-import type { GeoLocation, IPInfo, ISPInfo } from "@/types";
+import { geolocation, ipAddress } from "@vercel/functions";
+import ipaddr from "ipaddr.js";
+import {
+  detectIPVersion,
+  getIPCategory,
+  isPublicIP,
+  stripPort,
+} from "@/lib/ip-utils";
+import type { GeoLocation, IPInfo } from "@/types";
 
-type IPSource = IPInfo["source"];
-type IPConfidence = IPInfo["confidence"];
+type Candidate = {
+  ip: string;
+  source: IPInfo["source"];
+  provenance: IPInfo["provenance"];
+};
 
-function parseForwardedFor(forwarded: string): string | null {
-  const match = forwarded.match(/for=([^;,\s]+)/i);
-  if (!match?.[1]) return null;
-  return match[1].replace(/"/g, "").replace(/^\[/, "").replace(/\]$/, "");
+function canonicalizeIP(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+  const clean = ipaddr.isValid(trimmed) ? trimmed : stripPort(trimmed);
+  if (!ipaddr.isValid(clean)) return null;
+
+  const parsed = ipaddr.parse(clean);
+  if (parsed instanceof ipaddr.IPv6 && parsed.isIPv4MappedAddress()) {
+    return parsed.toIPv4Address().toString();
+  }
+
+  return parsed.toString();
+}
+
+function parseForwardedFor(value: string): string[] {
+  const candidates: string[] = [];
+
+  for (const element of value.split(",")) {
+    const match = element.match(
+      /(?:^|;)\s*for=(?:"\[([^\]]+)\](?::\d+)?"|\[([^\]]+)\](?::\d+)?|"?([^;,\s"]+)"?)/i,
+    );
+    const candidate = canonicalizeIP(match?.[1] ?? match?.[2] ?? match?.[3]);
+    if (candidate) candidates.push(candidate);
+  }
+
+  return candidates;
+}
+
+function pickFromList(value: string | null): string | null {
+  if (!value) return null;
+
+  const candidates = value
+    .split(",")
+    .map((part) => canonicalizeIP(part))
+    .filter((candidate): candidate is string => candidate !== null);
+
+  return candidates.find(isPublicIP) ?? candidates[0] ?? null;
 }
 
 /**
- * Extract the client IP string from request headers using the standard
- * header precedence chain. Shared by rate limiting and IP detection to
- * ensure both use identical logic.
+ * Observe the request through one deployment-aware seam. Vercel's helper is
+ * authoritative in production because the platform overwrites its client-IP
+ * header. Other proxy headers are deliberately lower-trust fallbacks.
  */
-export function extractClientIP(hdrs: Headers): string {
-  const chain = ["cf-connecting-ip", "x-real-ip"] as const;
-
-  for (const key of chain) {
-    const value = hdrs.get(key);
-    if (value) {
-      return stripPort(value) || "unknown";
-    }
-  }
-
-  const xff = hdrs.get("x-forwarded-for");
-  if (xff) {
-    const values = xff
-      .split(",")
-      .map((p) => stripPort(p.trim()))
-      .filter(Boolean);
-    const publicCandidate = values.find((ip) => !isPrivateIP(ip));
-    return publicCandidate ?? values[0] ?? "unknown";
-  }
-
-  const forwarded = hdrs.get("forwarded");
-  if (forwarded) {
-    const forValue = parseForwardedFor(forwarded);
-    if (forValue) {
-      return stripPort(forValue) || "unknown";
-    }
-  }
-
-  return "unknown";
-}
-
-function pickCandidate(raw: Awaited<ReturnType<typeof headers>>) {
-  const chain = [
-    { key: "cf-connecting-ip", source: "cloudflare" as const },
-    { key: "x-real-ip", source: "x-real-ip" as const },
-  ];
-
-  for (const item of chain) {
-    const value = raw.get(item.key);
-    if (value) {
-      return { ip: stripPort(value), source: item.source };
-    }
-  }
-
-  const xff = raw.get("x-forwarded-for");
-  if (xff) {
-    const values = xff
-      .split(",")
-      .map((p) => stripPort(p.trim()))
-      .filter(Boolean);
-
-    const publicCandidate = values.find((ip) => !isPrivateIP(ip));
-    return { ip: publicCandidate ?? values[0] ?? "", source: "x-forwarded-for" as const };
-  }
-
-  const forwarded = raw.get("forwarded");
-  if (forwarded) {
-    const forValue = parseForwardedFor(forwarded);
-    if (forValue) {
-      return { ip: stripPort(forValue), source: "forwarded" as const };
-    }
-  }
-
-  return { ip: "0.0.0.0", source: "fallback" as const };
-}
-
-async function resolveGeo(ip: string): Promise<{ location: GeoLocation | null; isp: ISPInfo | null }> {
-  const provider = process.env.GEOLOCATION_PROVIDER ?? "ipapi";
-
-  if (provider === "none") {
-    return { location: null, isp: null };
-  }
-
-  if (provider === "ipapi") {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3_500);
-
-    try {
-      const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-        headers: {
-          "User-Agent": "whats-my-ip-app/1.0",
-        },
-        cache: "no-store",
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        return { location: null, isp: null };
-      }
-
-      const raw = await response.json();
-      const parsed = geoSchema.safeParse({
-        city: raw.city ?? null,
-        region: raw.region ?? null,
-        country: raw.country_code ?? null,
-        timezone: raw.timezone ?? null,
-        latitude: raw.latitude ?? null,
-        longitude: raw.longitude ?? null,
-        isp: raw.org ?? null,
-        asn: raw.asn ?? null,
-        org: raw.org ?? null,
-      });
-
-      if (!parsed.success) {
-        return { location: null, isp: null };
-      }
-
+export function observeRequest(request: Request): Candidate {
+  if (process.env.VERCEL) {
+    const vercelIP = canonicalizeIP(ipAddress(request));
+    if (vercelIP) {
       return {
-        location: {
-          city: parsed.data.city,
-          region: parsed.data.region,
-          country: parsed.data.country,
-          timezone: parsed.data.timezone,
-          coordinates: {
-            latitude: parsed.data.latitude,
-            longitude: parsed.data.longitude,
-          },
-        },
-        isp: {
-          name: parsed.data.isp,
-          asn: parsed.data.asn,
-          organization: parsed.data.org,
+        ip: vercelIP,
+        source: "x-real-ip",
+        provenance: {
+          provider: "vercel",
+          header: "x-real-ip",
+          trusted: true,
+          forwarded: true,
         },
       };
-    } catch {
-      return { location: null, isp: null };
-    } finally {
-      clearTimeout(timeout);
     }
+
+    return {
+      ip: "0.0.0.0",
+      source: "fallback",
+      provenance: {
+        provider: "none",
+        header: null,
+        trusted: false,
+        forwarded: false,
+      },
+    };
   }
 
-  return { location: null, isp: null };
+  if (process.env.TRUSTED_PROXY_MODE === "cloudflare") {
+    const cloudflareIP = canonicalizeIP(
+      request.headers.get("cf-connecting-ip"),
+    );
+    if (cloudflareIP) {
+      return {
+        ip: cloudflareIP,
+        source: "cloudflare",
+        provenance: {
+          provider: "cloudflare",
+          header: "cf-connecting-ip",
+          trusted: true,
+          forwarded: true,
+        },
+      };
+    }
+
+    return {
+      ip: "0.0.0.0",
+      source: "fallback",
+      provenance: {
+        provider: "none",
+        header: null,
+        trusted: false,
+        forwarded: false,
+      },
+    };
+  }
+
+  const xRealIP = canonicalizeIP(request.headers.get("x-real-ip"));
+  if (xRealIP) {
+    return {
+      ip: xRealIP,
+      source: "x-real-ip",
+      provenance: {
+        provider: "standard-forwarded",
+        header: "x-real-ip",
+        trusted: false,
+        forwarded: true,
+      },
+    };
+  }
+
+  const xForwardedFor = pickFromList(request.headers.get("x-forwarded-for"));
+  if (xForwardedFor) {
+    return {
+      ip: xForwardedFor,
+      source: "x-forwarded-for",
+      provenance: {
+        provider: "standard-forwarded",
+        header: "x-forwarded-for",
+        trusted: false,
+        forwarded: true,
+      },
+    };
+  }
+
+  const forwardedFor = request.headers.get("forwarded");
+  const forwardedIP = forwardedFor ? parseForwardedFor(forwardedFor)[0] : null;
+  if (forwardedIP) {
+    return {
+      ip: forwardedIP,
+      source: "forwarded",
+      provenance: {
+        provider: "standard-forwarded",
+        header: "forwarded",
+        trusted: false,
+        forwarded: true,
+      },
+    };
+  }
+
+  return {
+    ip: "0.0.0.0",
+    source: "fallback",
+    provenance: {
+      provider: "none",
+      header: null,
+      trusted: false,
+      forwarded: false,
+    },
+  };
 }
 
-export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPInfo> {
-  const hdrs = await headers();
-  const warnings: string[] = [];
-  const candidate = pickCandidate(hdrs);
+function finiteCoordinate(
+  value: string | undefined,
+  minimum: number,
+  maximum: number,
+): number | null {
+  if (value === undefined || value.trim() === "") return null;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) &&
+    coordinate >= minimum &&
+    coordinate <= maximum
+    ? coordinate
+    : null;
+}
 
+function resolveVercelGeo(request: Request): GeoLocation | null {
+  try {
+    const geo = geolocation(request);
+    const latitude = finiteCoordinate(geo.latitude, -90, 90);
+    const longitude = finiteCoordinate(geo.longitude, -180, 180);
+    const timezone = request.headers.get("x-vercel-ip-timezone");
+
+    if (
+      !geo.city &&
+      !geo.countryRegion &&
+      !geo.country &&
+      !timezone &&
+      latitude === null &&
+      longitude === null
+    ) {
+      return null;
+    }
+
+    return {
+      city: geo.city ?? null,
+      region: geo.countryRegion ?? null,
+      country: geo.country ?? null,
+      timezone,
+      coordinates: { latitude, longitude },
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function detectIP(
+  request: Request,
+  options?: { includeGeo?: boolean },
+): Promise<IPInfo> {
+  const warnings: string[] = [];
+  const candidate = observeRequest(request);
   const ipVersion = detectIPVersion(candidate.ip);
   const category = getIPCategory(candidate.ip);
 
-  if (category !== "Public") {
-    warnings.push(`Address category: ${category}`);
+  if (category !== "Public") warnings.push(`Address category: ${category}`);
+  if (!candidate.provenance.trusted && candidate.provenance.forwarded) {
+    warnings.push(
+      "IP came from an untrusted forwarding header and may be client-controlled.",
+    );
   }
-
-  if (candidate.source === "x-forwarded-for" || candidate.source === "forwarded") {
-    warnings.push("IP detected via proxy header; may differ when using VPN, Tor, or relay services.");
-  }
-
   if (candidate.source === "fallback" || ipVersion === "Unknown") {
-    warnings.push("Unable to determine a reliable public IP from request headers.");
+    warnings.push(
+      "Unable to determine a reliable public IP from request headers.",
+    );
   }
 
-  let location: GeoLocation | null = null;
-  let isp: ISPInfo | null = null;
+  const location = options?.includeGeo ? resolveVercelGeo(request) : null;
+  if (options?.includeGeo && !location)
+    warnings.push("Vercel geolocation headers returned no data.");
 
-  if (options?.includeGeo) {
-    const geo = await resolveGeo(candidate.ip);
-    location = geo.location;
-    isp = geo.isp;
-
-    if (!location) {
-      warnings.push("Geolocation lookup failed or returned no data.");
-    }
+  let protocol: "http" | "https" = "http";
+  try {
+    protocol = new URL(request.url).protocol === "https:" ? "https" : "http";
+  } catch {
+    // Request implementations normally guarantee a valid absolute URL.
   }
-
-  const confidence: IPConfidence =
-    candidate.source === "cloudflare" || candidate.source === "x-real-ip"
-      ? "high"
-      : candidate.source === "x-forwarded-for" || candidate.source === "forwarded"
-        ? "medium"
-        : "low";
-  const relayLikely = candidate.source === "x-forwarded-for" || candidate.source === "forwarded";
 
   return {
     ip: candidate.ip,
@@ -198,18 +253,19 @@ export async function detectIP(options?: { includeGeo?: boolean }): Promise<IPIn
     ipv4: ipVersion === "IPv4" ? candidate.ip : null,
     ipv6: ipVersion === "IPv6" ? candidate.ip : null,
     isPublic: category === "Public",
-    source: candidate.source as IPSource,
-    confidence,
-    relayLikely,
+    source: candidate.source,
+    confidence: candidate.provenance.trusted ? "high" : "low",
+    provenance: candidate.provenance,
     category,
     timestamp: new Date().toISOString(),
     warnings,
     location,
-    isp,
+    isp: null,
     request: {
-      userAgent: hdrs.get("user-agent") ?? "Unknown",
-      language: hdrs.get("accept-language")?.split(",")[0] ?? "Unknown",
-      protocol: hdrs.get("x-forwarded-proto") === "https" ? "https" : "http",
+      userAgent: request.headers.get("user-agent") ?? "Unknown",
+      language:
+        request.headers.get("accept-language")?.split(",")[0] ?? "Unknown",
+      protocol,
     },
   };
 }

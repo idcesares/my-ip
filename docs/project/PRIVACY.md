@@ -1,18 +1,31 @@
 # Privacy
 
-## What this app does
-- Reads request IP headers server-side to determine your reachable address.
-- Collects browser diagnostics in your browser at runtime.
-- Stores up to 10 recent checks in localStorage only.
-- Reads permission status locally (without requesting access).
-- Performs same-origin API probe for RTT/security-header visibility.
-- Runs advanced browser/network probes only when user enables Advanced Metrics.
+## Data flow
 
-## What this app does not do
-- No analytics/tracking scripts.
-- No database persistence of request data.
-- No third-party location lookup unless explicitly requested and enabled.
-- No canvas/audio/WebGL fingerprinting hashes or plugin/font enumeration.
+- The server reads the request metadata needed to return the address used for the current connection.
+- On Vercel, IP and optional location fields come from platform request metadata exposed by `@vercel/functions`.
+- Browser, display, network, permission-state, and security-header diagnostics are computed in the browser.
+- Up to 10 recent checks are stored in that browser's `localStorage`. Clearing site data or using the in-app clear action removes them.
+- Advanced diagnostics run only after the user enables them. Permission state is read without requesting a permission grant.
+- The optional WebRTC address exposure test runs only after the user starts it. It contacts the configured public Google STUN servers, which necessarily receive a network request and its source address, to gather ICE candidates.
+- WebRTC candidates are compared with the address used for the current HTTP request. The same public address is expected exposure; additional public addresses or literal private addresses are called out separately.
 
-## Optional geolocation
-`include=geo` is opt-in at request level. If enabled with `GEOLOCATION_PROVIDER=ipapi`, the server sends your detected IP to `ipapi.co`.
+## What the application does not do
+
+- No analytics, advertising, tracking pixels, or tracking scripts.
+- No application database and no server-side history of checks.
+- No third-party IP-geolocation lookup. Optional location fields use Vercel's request metadata.
+- No ISP, ASN, reputation, or ownership enrichment request.
+- No canvas, audio, or WebGL fingerprint hashes; no plugin or font enumeration.
+- No permission prompts initiated by diagnostics.
+- No WebRTC test on initial page load or without an explicit user action.
+
+## Hosting and operational logs
+
+Vercel necessarily processes requests to host the application and may retain operational logs according to the deployment owner's Vercel settings and Vercel's policies. Those platform controls are separate from application analytics; this repository does not add an analytics SDK.
+
+## Limitations
+
+The displayed address can be a VPN, Tor exit, relay, carrier-grade NAT, or corporate proxy address. Location is approximate platform metadata and may be missing. A browser connection exposes only the address family used for that request.
+
+Network Information API values are rounded browser estimates and may be unavailable. The page-fetch duration includes browser and server work, so it is not a network ping. Permission values are effective states for this origin and can be affected by browser policy. WebRTC candidate gathering is a short observation, not proof that no other address can ever be exposed.

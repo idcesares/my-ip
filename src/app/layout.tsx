@@ -4,8 +4,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-import { Analytics } from "@vercel/analytics/next"
-
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL;
 const metadataBase = siteUrl ? new URL(siteUrl) : undefined;
 
@@ -78,13 +76,16 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "What's My IP? | Privacy-First IP Diagnostics",
-    description: "Find your IP and inspect network, browser, and privacy/security metrics in real time.",
+    description:
+      "Find your IP and inspect network, browser, and privacy/security metrics in real time.",
     images: ["/twitter-image"],
     creator: "@idcesares",
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -105,17 +106,23 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased`}>
+    <html
+      lang="en"
+      className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="antialiased">
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         <ThemeProvider>
           {children}
           <Toaster />
         </ThemeProvider>
-        <Analytics/>
       </body>
     </html>
   );

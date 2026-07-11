@@ -11,7 +11,12 @@ function buildIP(overrides: Partial<IPInfo> = {}): IPInfo {
     isPublic: true,
     source: "x-real-ip",
     confidence: "high",
-    relayLikely: false,
+    provenance: {
+      provider: "vercel",
+      header: "x-real-ip",
+      trusted: true,
+      forwarded: true,
+    },
     category: "Public",
     timestamp: "2026-03-02T12:00:00.000Z",
     warnings: [],
@@ -22,7 +27,9 @@ function buildIP(overrides: Partial<IPInfo> = {}): IPInfo {
   };
 }
 
-function buildBrowser(overrides: Partial<BrowserDiagnostics> = {}): BrowserDiagnostics {
+function buildBrowser(
+  overrides: Partial<BrowserDiagnostics> = {},
+): BrowserDiagnostics {
   return {
     userAgent: "TestAgent/1.0",
     languages: ["en-US"],
@@ -41,7 +48,7 @@ function buildBrowser(overrides: Partial<BrowserDiagnostics> = {}): BrowserDiagn
       rtt: 50,
       saveData: false,
       changedAt: null,
-      apiRttMs: null,
+      pageFetchMs: null,
     },
     preferences: {
       colorScheme: "dark",
@@ -50,17 +57,16 @@ function buildBrowser(overrides: Partial<BrowserDiagnostics> = {}): BrowserDiagn
       touchCapable: false,
       maxTouchPoints: 0,
       cookieEnabled: true,
-      doNotTrack: null,
     },
     capabilities: {
       hardwareConcurrencyBucket: "8",
-      deviceMemoryBucket: "8",
+      deviceMemoryGB: 8,
       pdfViewerEnabled: true,
       secureContext: true,
       crossOriginIsolated: false,
     },
     privacy: {
-      firstPartyCookieCount: 0,
+      scriptVisibleCookieCount: 0,
       permissions: {
         notifications: "prompt",
         geolocation: "prompt",
@@ -70,7 +76,6 @@ function buildBrowser(overrides: Partial<BrowserDiagnostics> = {}): BrowserDiagn
     },
     security: {
       protocol: "https:",
-      referrerPolicy: "strict-origin-when-cross-origin",
       responseHeaders: {
         csp: null,
         referrerPolicy: null,
@@ -89,7 +94,9 @@ describe("buildTextReport", () => {
     const report = buildTextReport(buildIP(), null);
     expect(report).toContain("Your IP Address: 203.0.113.42 (IPv4)");
     expect(report).toContain("Category: Public");
-    expect(report).toContain("Detection Source: x-real-ip");
+    expect(report).toContain("Detection Provider: vercel");
+    expect(report).toContain("Detection Header: x-real-ip");
+    expect(report).toContain("Deployment-Trusted Header: yes");
     expect(report).toContain("Detection Confidence: high");
   });
 
@@ -136,7 +143,7 @@ describe("buildTextReport", () => {
         rtt: null,
         saveData: null,
         changedAt: null,
-        apiRttMs: null,
+        pageFetchMs: null,
       },
     });
     const report = buildTextReport(buildIP(), browser);
