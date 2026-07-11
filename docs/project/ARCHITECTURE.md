@@ -1,60 +1,58 @@
 # Architecture Overview
 
-This project is a privacy-first, App Router-based diagnostics platform focused on user-visible networking, browser, and security context.
+This project is a privacy-first Next.js App Router application for user-visible IP, browser, and security diagnostics.
 
-## System Shape
+## Runtime shape
 
 ```mermaid
 flowchart TD
-  U[User Browser] --> P[Next.js App Router UI]
-  P --> A[/api/ip Route Handler]
-  A --> D[IP Detection + Validation]
-  A --> R[Rate Limiter]
-  A --> G[Optional Geo Provider]
-  P --> B[Client Diagnostics Hook]
-  B --> S[Same-Origin Security/Header Probe]
-  B --> L[Local Permission + Capability Signals]
+  U[User browser] --> V[Vercel edge and WAF]
+  V --> P[Next.js application]
+  P --> A[/api/ip route]
+  A --> M[Vercel request metadata]
+  P --> B[Client diagnostics]
+  B --> L[Local capability and permission state]
+  B --> S[Same-origin header probe]
+  B --> W[User-triggered WebRTC candidate test]
+  B --> H[localStorage history]
 ```
 
-## Runtime Boundaries
+## Responsibilities
 
-- Server responsibilities:
-  - Proxy-aware IP detection
-  - Response shaping (`json` / `text`)
-  - Rate limiting
-  - Optional geolocation enrichment
-- Client responsibilities:
-  - Browser/network diagnostics
-  - Permission state visibility (no permission prompts)
-  - Local history and export/share UX
+- Server:
+  - Resolve the connection address from trusted request metadata.
+  - Read optional Vercel geolocation metadata through `@vercel/functions`.
+  - Validate query parameters and shape JSON, report-text, and plain responses.
+  - Apply static security headers through `next.config.ts`.
+- Browser:
+  - Collect browser/network estimates and effective permission states without permission prompts.
+  - Measure a same-origin page fetch and label it as total request duration, not RTT.
+  - Compare user-triggered WebRTC candidates with the address used for the HTTP request.
+  - Keep the last 10 checks in local storage.
+  - Perform copy, share, export, and user-triggered advanced diagnostics.
+- Platform:
+  - Terminate TLS and provide request metadata.
+  - Enforce production request limits and abuse rules through Vercel WAF.
 
-## Privacy Boundaries
+There is intentionally no process-local production rate limiter: function instances and regions do not share memory, so an in-process counter would provide misleading protection.
 
-- No analytics or trackers.
-- No server-side persistence of user diagnostics/history.
-- No fingerprint-hash generation (canvas/audio/webgl hashing excluded).
-- Advanced diagnostics are user-controlled via UI toggle.
+Outside Vercel, generic forwarding headers are reported as untrusted provenance. A self-hosted deployment may opt into `TRUSTED_PROXY_MODE=cloudflare` only when Cloudflare is the exclusive ingress.
 
-## SEO/Discoverability Layer
+## Privacy properties
 
-- Rich metadata in `src/app/layout.tsx`
-- Crawl/preview assets:
-  - `src/app/robots.ts`
-  - `src/app/sitemap.ts`
-  - `src/app/opengraph-image.tsx`
-  - `src/app/twitter-image.tsx`
+- No analytics or application tracking SDK.
+- No application database or server-side check history.
+- No third-party geolocation request.
+- Advanced and WebRTC probes are user-controlled; the WebRTC probe discloses its public STUN-server contact.
+- Vercel operational processing and logs remain governed by deployment settings.
 
-## Delivery and Quality Gates
+## Delivery and quality gates
 
-```mermaid
-flowchart LR
-  C[Code Changes] --> Q[Lint + Typecheck + Tests]
-  Q --> B[Production Build]
-  B --> D[Deploy]
-  D --> V[Lighthouse + SEO Validation]
-```
+Pull requests run formatting, lint, strict TypeScript checks, coverage-enforced Vitest suites, the production build, and a production-server smoke test in `.github/workflows/ci.yml`. Vercel preview/production deployments should additionally verify WAF policy, canonical metadata, security headers, responsive rendering, and Lighthouse results.
 
-## Collaboration Credit
+Critical measurement and assessment logic is isolated in `src/lib/browser-metrics.ts`, `src/lib/webrtc-diagnostics.ts`, and `src/lib/privacy-score.ts`. Hooks perform browser I/O; pure library functions own normalization and interpretation so they can be tested deterministically.
 
-Architectural direction and product intent by Isaac D'Césares.  
-Implementation evolved through vibe coded collaboration with Codex (GPT-5).
+## Discoverability
+
+- Metadata and structured data: `src/app/layout.tsx`
+- Crawl/preview routes: `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/opengraph-image.tsx`, and `src/app/twitter-image.tsx`

@@ -1,6 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- Removed Vercel Analytics so runtime behavior matches the no-analytics privacy contract.
+- Moved static security headers into Next.js configuration and removed request middleware overhead and the deprecated `X-XSS-Protection` header.
+- Documented Vercel-native IP/location metadata and Vercel WAF as the production request-limiting layer.
+- Clarified JSON, report-text, and plain-IP API formats plus local-only browser history.
+- Corrected shadcn/ui aliases/style and Tailwind CSS v4 font tokens.
+- Added CI enforcement for typecheck, lint, tests, and production builds.
+- Corrected diagnostic semantics: browser connection values are labeled as estimates, the same-origin probe is reported as total page-fetch duration, unsupported values are explicit, and ambiguous Do Not Track reporting was removed.
+- Reworked the WebRTC test to compare ICE candidates with the current HTTP address, separate expected exposure from additional public or literal private addresses, identify mDNS masking, retain partial timeout results, and disclose STUN-server contact.
+- Added deterministic browser-metric and WebRTC assessment modules with unit and component coverage.
+- Added enforced coverage thresholds and a production-server smoke suite covering the page, API formats, cache controls, method handling, security headers, and absence of analytics code.
+- Refreshed page methodology copy, `AGENTS.md`, and the complete agent/documentation package to match the current Next.js and Vercel architecture.
+
 ## 1.1.0 - 2026-02-09
+
 - Added richer diagnostics (network, browser capability, privacy/security context) with explanatory tooltips.
 - Added Basic/Advanced diagnostics mode and advanced-only probe behavior to reduce default UI clutter and payload.
 - Added detection trust metadata (`confidence`, `relayLikely`) and surfaced it in UI/API/export.
@@ -15,6 +30,7 @@
 - Added explicit project authorship and open-source attribution in UI/docs.
 
 ## 1.0.0 - 2026-02-08
+
 - Initial production-ready release.
 - Proxy-aware server-side IP detection and API endpoint.
 - Browser/network diagnostics UI with export/share/copy.

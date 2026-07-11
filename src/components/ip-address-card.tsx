@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
-import { AlertTriangle, Globe, MapPin, Radar, ShieldAlert, Waypoints } from "lucide-react";
+import {
+  AlertTriangle,
+  Globe,
+  MapPin,
+  Radar,
+  ShieldAlert,
+  Waypoints,
+} from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,21 +33,28 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
     >
       <Card className="grain-overlay overflow-hidden border-[hsl(var(--primary))/0.2]">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-xl md:text-2xl">
+          <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-xl md:text-2xl">
               <Radar className="h-5 w-5 text-sky-500" />
               Your IP Address
             </span>
-            <Badge variant={data.isPublic ? "default" : "secondary"} className="rounded-full px-3 py-1">
+            <Badge
+              variant={data.isPublic ? "default" : "secondary"}
+              className="rounded-full px-3 py-1"
+            >
               {data.ipVersion}
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-[hsl(var(--background))/0.55] p-4">
-            <div>
-              <p className="mb-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">Primary IP</p>
-              <code className="break-all text-2xl font-semibold tracking-tight md:text-4xl">{data.ip}</code>
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border bg-[hsl(var(--background))/0.55] p-4">
+            <div className="min-w-0 flex-1">
+              <p className="mb-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
+                Primary IP
+              </p>
+              <code className="break-all text-2xl font-semibold tracking-tight md:text-4xl">
+                {data.ip}
+              </code>
             </div>
             <CopyButton value={data.ip} label={data.ipVersion} />
           </div>
@@ -50,8 +64,10 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
                 <Globe className="h-3.5 w-3.5" /> IPv4
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <code className="break-all text-sm md:text-base">{data.ipv4 ?? "Unavailable"}</code>
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <code className="min-w-0 flex-1 break-all text-sm md:text-base">
+                  {data.ipv4 ?? "Unavailable"}
+                </code>
                 <CopyButton value={data.ipv4} label="IPv4" />
               </div>
             </div>
@@ -59,26 +75,46 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
                 <Waypoints className="h-3.5 w-3.5" /> IPv6
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <code className="break-all text-sm md:text-base">{data.ipv6 ?? "Unavailable"}</code>
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <code className="min-w-0 flex-1 break-all text-sm md:text-base">
+                  {data.ipv6 ?? "Unavailable"}
+                </code>
                 <CopyButton value={data.ipv6} label="IPv6" />
               </div>
             </div>
           </div>
 
           <div className="rounded-xl border bg-[hsl(var(--background))/0.45] p-3 text-sm">
-            <div className="grid gap-1 md:grid-cols-2">
+            <div className="grid gap-1 sm:grid-cols-2">
               <p className="text-[hsl(var(--muted-foreground))]">
-                Detected from: <span className="font-medium text-[hsl(var(--foreground))]">{data.source}</span>
+                Provider:{" "}
+                <span className="font-medium text-[hsl(var(--foreground))]">
+                  {data.provenance.provider}
+                </span>
               </p>
               <p className="text-[hsl(var(--muted-foreground))]">
-                Confidence: <span className="font-medium text-[hsl(var(--foreground))]">{data.confidence}</span>
+                Header:{" "}
+                <span className="break-all font-medium text-[hsl(var(--foreground))]">
+                  {data.provenance.header ?? "none"}
+                </span>
               </p>
               <p className="text-[hsl(var(--muted-foreground))]">
-                Category: <span className="font-medium text-[hsl(var(--foreground))]">{data.category}</span>
+                Trusted by deployment:{" "}
+                <span className="font-medium text-[hsl(var(--foreground))]">
+                  {data.provenance.trusted ? "yes" : "no"}
+                </span>
               </p>
               <p className="text-[hsl(var(--muted-foreground))]">
-                Relay likely: <span className="font-medium text-[hsl(var(--foreground))]">{String(data.relayLikely)}</span>
+                Confidence:{" "}
+                <span className="font-medium text-[hsl(var(--foreground))]">
+                  {data.confidence}
+                </span>
+              </p>
+              <p className="text-[hsl(var(--muted-foreground))] sm:col-span-2">
+                Category:{" "}
+                <span className="font-medium text-[hsl(var(--foreground))]">
+                  {data.category}
+                </span>
               </p>
             </div>
           </div>
@@ -90,28 +126,46 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               </div>
               <div className="grid gap-1 text-sm md:grid-cols-2">
                 <p className="text-[hsl(var(--muted-foreground))]">
-                  City: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.city ?? "Unknown"}</span>
+                  City:{" "}
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    {data.location.city ?? "Unknown"}
+                  </span>
                 </p>
                 <p className="text-[hsl(var(--muted-foreground))]">
-                  Region: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.region ?? "Unknown"}</span>
+                  Region:{" "}
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    {data.location.region ?? "Unknown"}
+                  </span>
                 </p>
                 <p className="text-[hsl(var(--muted-foreground))]">
-                  Country: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.country ?? "Unknown"}</span>
+                  Country:{" "}
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    {data.location.country ?? "Unknown"}
+                  </span>
                 </p>
                 {data.location.timezone && (
                   <p className="text-[hsl(var(--muted-foreground))]">
-                    Timezone: <span className="font-medium text-[hsl(var(--foreground))]">{data.location.timezone}</span>
+                    Timezone:{" "}
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      {data.location.timezone}
+                    </span>
                   </p>
                 )}
               </div>
               {data.isp && (
                 <div className="mt-2 grid gap-1 text-sm md:grid-cols-2">
                   <p className="text-[hsl(var(--muted-foreground))]">
-                    ISP: <span className="font-medium text-[hsl(var(--foreground))]">{data.isp.name ?? "Unknown"}</span>
+                    ISP:{" "}
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      {data.isp.name ?? "Unknown"}
+                    </span>
                   </p>
                   {data.isp.asn && (
                     <p className="text-[hsl(var(--muted-foreground))]">
-                      ASN: <span className="font-medium text-[hsl(var(--foreground))]">{data.isp.asn}</span>
+                      ASN:{" "}
+                      <span className="font-medium text-[hsl(var(--foreground))]">
+                        {data.isp.asn}
+                      </span>
                     </p>
                   )}
                 </div>

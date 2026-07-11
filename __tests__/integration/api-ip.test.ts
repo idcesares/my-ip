@@ -11,7 +11,12 @@ function buildDetection(overrides: Partial<IPInfo> = {}): IPInfo {
     isPublic: true,
     source: "x-real-ip",
     confidence: "high",
-    relayLikely: false,
+    provenance: {
+      provider: "vercel",
+      header: "x-real-ip",
+      trusted: true,
+      forwarded: true,
+    },
     category: "Public",
     timestamp: new Date().toISOString(),
     warnings: [],

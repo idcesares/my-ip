@@ -19,18 +19,28 @@ export function ActionBar({
   const exportJson = () => {
     downloadFile(
       `ip-info-${timestampName()}.json`,
-      JSON.stringify({ ip, browser, exportedAt: new Date().toISOString() }, null, 2),
+      JSON.stringify(
+        { ip, browser, exportedAt: new Date().toISOString() },
+        null,
+        2,
+      ),
       "application/json",
     );
     toast.success("Exported JSON report.");
   };
 
   const exportTxt = () => {
-    downloadFile(`ip-info-${timestampName()}.txt`, buildTextReport(ip, browser), "text/plain;charset=utf-8");
+    downloadFile(
+      `ip-info-${timestampName()}.txt`,
+      buildTextReport(ip, browser),
+      "text/plain;charset=utf-8",
+    );
     toast.success("Exported text report.");
   };
 
-  const copyToClipboardWithFallback = async (text: string): Promise<boolean> => {
+  const copyToClipboardWithFallback = async (
+    text: string,
+  ): Promise<boolean> => {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -52,14 +62,20 @@ export function ActionBar({
     const shareText = `My IP: ${ip.ip} (${ip.ipVersion}) | Location: ${ip.location?.city ?? "Not available"}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "What's My IP", text: shareText, url: window.location.href });
+        await navigator.share({
+          title: "What's My IP",
+          text: shareText,
+          url: window.location.href,
+        });
         return;
       } catch {
         // fallback to clipboard below
       }
     }
 
-    const copied = await copyToClipboardWithFallback(`${shareText} | ${window.location.href}`);
+    const copied = await copyToClipboardWithFallback(
+      `${shareText} | ${window.location.href}`,
+    );
     if (copied) {
       toast.success("Share details copied to clipboard.");
       return;
@@ -75,11 +91,39 @@ export function ActionBar({
       transition={{ duration: 0.3, delay: 0.08 }}
       className="surface-card rounded-2xl p-3"
     >
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={share}><Share2 className="h-4 w-4" />Share Results</Button>
-        <Button variant="outline" onClick={exportJson}><Download className="h-4 w-4" />Export JSON</Button>
-        <Button variant="outline" onClick={exportTxt}><Download className="h-4 w-4" />Export TXT</Button>
-        <Button variant="secondary" onClick={onRefresh}><RefreshCw className="h-4 w-4" />Refresh</Button>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        <Button
+          className="min-h-11 whitespace-normal"
+          variant="outline"
+          onClick={share}
+        >
+          <Share2 className="h-4 w-4" />
+          Share
+        </Button>
+        <Button
+          className="min-h-11 whitespace-normal"
+          variant="outline"
+          onClick={exportJson}
+        >
+          <Download className="h-4 w-4" />
+          Export JSON
+        </Button>
+        <Button
+          className="min-h-11 whitespace-normal"
+          variant="outline"
+          onClick={exportTxt}
+        >
+          <Download className="h-4 w-4" />
+          Export TXT
+        </Button>
+        <Button
+          className="min-h-11 whitespace-normal"
+          variant="secondary"
+          onClick={onRefresh}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
       </div>
     </m.div>
   );

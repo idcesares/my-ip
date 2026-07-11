@@ -4,10 +4,33 @@ export interface IPInfo {
   ipv4: string | null;
   ipv6: string | null;
   isPublic: boolean;
-  source: "cloudflare" | "x-real-ip" | "x-forwarded-for" | "forwarded" | "fallback";
+  source:
+    | "cloudflare"
+    | "x-real-ip"
+    | "x-forwarded-for"
+    | "forwarded"
+    | "fallback";
   confidence: "high" | "medium" | "low";
-  relayLikely: boolean;
-  category: "Public" | "Private" | "CGNAT" | "Loopback" | "Link-Local";
+  provenance: {
+    provider: "vercel" | "cloudflare" | "standard-forwarded" | "none";
+    header:
+      | "x-real-ip"
+      | "cf-connecting-ip"
+      | "x-forwarded-for"
+      | "forwarded"
+      | null;
+    trusted: boolean;
+    forwarded: boolean;
+  };
+  category:
+    | "Public"
+    | "Private"
+    | "CGNAT"
+    | "Loopback"
+    | "Link-Local"
+    | "Reserved"
+    | "Multicast"
+    | "Unspecified";
   timestamp: string;
   warnings: string[];
   request: {
@@ -61,7 +84,7 @@ export interface BrowserDiagnostics {
     rtt: number | null;
     saveData: boolean | null;
     changedAt: string | null;
-    apiRttMs: number | null;
+    pageFetchMs: number | null;
   };
   preferences: {
     colorScheme: "light" | "dark";
@@ -70,17 +93,16 @@ export interface BrowserDiagnostics {
     touchCapable: boolean;
     maxTouchPoints: number;
     cookieEnabled: boolean;
-    doNotTrack: string | null;
   };
   capabilities: {
     hardwareConcurrencyBucket: string | null;
-    deviceMemoryBucket: string | null;
+    deviceMemoryGB: number | null;
     pdfViewerEnabled: boolean | null;
     secureContext: boolean;
     crossOriginIsolated: boolean;
   };
   privacy: {
-    firstPartyCookieCount: number;
+    scriptVisibleCookieCount: number;
     permissions: {
       notifications: PermissionState | "unsupported" | "error";
       geolocation: PermissionState | "unsupported" | "error";
@@ -90,7 +112,6 @@ export interface BrowserDiagnostics {
   };
   security: {
     protocol: string;
-    referrerPolicy: string | null;
     responseHeaders: {
       csp: string | null;
       referrerPolicy: string | null;
@@ -104,25 +125,17 @@ export interface BrowserDiagnostics {
 
 export interface WebRTCLeakResult {
   supported: boolean;
-  leaking: boolean;
-  localIPs: string[];
-  publicIPs: string[];
+  completed: boolean;
+  timedOut: boolean;
+  candidates: WebRTCCandidateObservation[];
   error: string | null;
 }
 
-export interface PrivacyCheckResult {
-  id: string;
-  label: string;
-  status: "pass" | "warn" | "fail";
-  detail: string;
-  weight: number;
-}
-
-export interface PrivacyScore {
-  overall: number;
-  grade: "A+" | "A" | "B" | "C" | "D" | "F";
-  checks: PrivacyCheckResult[];
-  consistencyIssues: string[];
+export interface WebRTCCandidateObservation {
+  address: string;
+  addressKind: "public" | "private" | "mdns" | "special" | "unknown";
+  candidateType: "host" | "srflx" | "prflx" | "relay" | null;
+  protocol: "udp" | "tcp" | null;
 }
 
 export interface HistoryEntry {

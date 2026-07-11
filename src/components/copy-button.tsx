@@ -6,7 +6,13 @@ import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export function CopyButton({ value, label }: { value: string | null; label: string }) {
+export function CopyButton({
+  value,
+  label,
+}: {
+  value: string | null;
+  label: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {
@@ -22,7 +28,14 @@ export function CopyButton({ value, label }: { value: string | null; label: stri
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={onCopy} disabled={!value} className="min-w-26" aria-live="polite">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onCopy}
+      disabled={!value}
+      className="h-11 min-w-11 shrink-0 px-3 sm:min-w-26"
+      aria-label={copied ? `${label} copied` : `Copy ${label}`}
+    >
       <m.span
         key={copied ? "done" : "copy"}
         initial={{ opacity: 0, y: 3 }}
@@ -31,7 +44,12 @@ export function CopyButton({ value, label }: { value: string | null; label: stri
         className="inline-flex items-center gap-1.5"
       >
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-        <span>{copied ? "Copied" : `Copy ${label}`}</span>
+        <span className="hidden sm:inline">
+          {copied ? "Copied" : `Copy ${label}`}
+        </span>
+        <span className="sr-only" aria-live="polite">
+          {copied ? `${label} copied` : ""}
+        </span>
       </m.span>
     </Button>
   );

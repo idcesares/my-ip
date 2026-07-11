@@ -8,6 +8,24 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./__tests__/setup.ts",
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      include: [
+        "src/lib/browser-metrics.ts",
+        "src/lib/ip-detection.ts",
+        "src/lib/ip-utils.ts",
+        "src/lib/privacy-score.ts",
+        "src/lib/schemas.ts",
+        "src/lib/webrtc-diagnostics.ts",
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        statements: 80,
+        branches: 75,
+      },
+    },
   },
   resolve: {
     alias: {

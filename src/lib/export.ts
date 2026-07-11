@@ -1,19 +1,25 @@
 import type { BrowserDiagnostics, IPInfo } from "@/types";
 
-export function buildTextReport(ip: IPInfo, browser: BrowserDiagnostics | null): string {
+export function buildTextReport(
+  ip: IPInfo,
+  browser: BrowserDiagnostics | null,
+): string {
   const lines = [
     `Your IP Address: ${ip.ip} (${ip.ipVersion})`,
     `IPv4: ${ip.ipv4 ?? "N/A"}`,
     `IPv6: ${ip.ipv6 ?? "N/A"}`,
     `Category: ${ip.category}`,
-    `Detection Source: ${ip.source}`,
+    `Detection Provider: ${ip.provenance.provider}`,
+    `Detection Header: ${ip.provenance.header ?? "none"}`,
+    `Deployment-Trusted Header: ${ip.provenance.trusted ? "yes" : "no"}`,
     `Detection Confidence: ${ip.confidence}`,
-    `Relay Likely: ${ip.relayLikely}`,
     `Timestamp: ${ip.timestamp}`,
   ];
 
   if (ip.location) {
-    lines.push(`Location: ${ip.location.city ?? "Unknown"}, ${ip.location.region ?? "Unknown"}, ${ip.location.country ?? "Unknown"}`);
+    lines.push(
+      `Location: ${ip.location.city ?? "Unknown"}, ${ip.location.region ?? "Unknown"}, ${ip.location.country ?? "Unknown"}`,
+    );
   }
 
   if (browser) {
@@ -25,7 +31,11 @@ export function buildTextReport(ip: IPInfo, browser: BrowserDiagnostics | null):
   return lines.join("\n");
 }
 
-export function downloadFile(filename: string, content: string, mimeType: string) {
+export function downloadFile(
+  filename: string,
+  content: string,
+  mimeType: string,
+) {
   if (typeof document === "undefined") return;
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);

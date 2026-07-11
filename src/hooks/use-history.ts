@@ -45,7 +45,10 @@ export function useHistory() {
 
   const add = useCallback((item: Omit<HistoryEntry, "id">) => {
     setHistory((prev) => {
-      const next = [{ ...item, id: crypto.randomUUID() }, ...prev].slice(0, MAX_ITEMS);
+      const next = [{ ...item, id: crypto.randomUUID() }, ...prev].slice(
+        0,
+        MAX_ITEMS,
+      );
       localStorage.setItem(KEY, JSON.stringify(next));
       return next;
     });

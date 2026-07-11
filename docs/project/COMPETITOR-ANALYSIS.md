@@ -6,60 +6,70 @@ Research conducted March 2026. Covers the top 10 IP lookup / privacy diagnostics
 
 ## Feature Comparison Matrix
 
-| Feature | whatismyipaddress.com | ipinfo.io | ipleak.net | whoer.net | browserleaks.com | whatismyip.com | ip-api.com | ifconfig.me/co | ipchicken.com | myip.com |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **IPv4 Display** | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| **IPv6 Display** | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | No | Yes |
-| **Dual-Stack** | Yes | Limited | Yes | Yes | Yes | Yes | No | Partial | No | Partial |
-| **Geolocation** | Yes | Paid only | Yes | Yes | Yes | Yes | Yes | Yes | Basic | Basic |
-| **ISP/ASN** | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Basic | Yes |
-| **DNS Leak Test** | No | No | Yes | Yes | Yes | No | No | No | No | No |
-| **WebRTC Leak Test** | No | No | Yes | Yes | Yes | No | No | No | No | No |
-| **Speed Test** | Yes | No | No | Yes | No | No | No | No | No | No |
-| **Port Scanning** | No | No | No | No | No | Yes | No | No | No | No |
-| **VPN/Proxy/Tor Detection** | Yes | Yes (paid) | Partial | Yes | Partial | Yes | No | No | No | No |
-| **Browser Fingerprinting** | No | No | No | Basic | Deep | No | No | No | No | No |
-| **Anonymity Score** | No | No | No | Yes | No | No | No | No | No | No |
-| **API Available** | No | Yes | No | No | No | No | Yes | Yes | No | Yes |
-| **CLI-Friendly** | No | Yes | No | No | No | No | Yes | Yes | No | No |
-| **Blacklist Check** | Yes | No | No | No | No | Yes | No | No | No | No |
-| **WHOIS Lookup** | No | No | No | No | No | Yes | No | No | No | No |
-| **Traceroute** | No | No | No | No | No | Yes | No | No | No | No |
-| **Privacy-First** | Moderate | Yes | Yes | Moderate | Yes | Moderate | Yes | Yes | Yes | Moderate |
-| **UI/UX Quality** | Good (dated) | Excellent | Functional | Good | Good (technical) | Good | Minimal | Minimal | Retro | Basic |
+| Feature                     | whatismyipaddress.com | ipinfo.io  | ipleak.net | whoer.net | browserleaks.com | whatismyip.com | ip-api.com | ifconfig.me/co | ipchicken.com | myip.com |
+| --------------------------- | --------------------- | ---------- | ---------- | --------- | ---------------- | -------------- | ---------- | -------------- | ------------- | -------- |
+| **IPv4 Display**            | Yes                   | Yes        | Yes        | Yes       | Yes              | Yes            | Yes        | Yes            | Yes           | Yes      |
+| **IPv6 Display**            | Yes                   | Yes        | Yes        | Yes       | Yes              | Yes            | Yes        | Yes            | No            | Yes      |
+| **Dual-Stack**              | Yes                   | Limited    | Yes        | Yes       | Yes              | Yes            | No         | Partial        | No            | Partial  |
+| **Geolocation**             | Yes                   | Paid only  | Yes        | Yes       | Yes              | Yes            | Yes        | Yes            | Basic         | Basic    |
+| **ISP/ASN**                 | Yes                   | Yes        | Yes        | Yes       | Yes              | Yes            | Yes        | Yes            | Basic         | Yes      |
+| **DNS Leak Test**           | No                    | No         | Yes        | Yes       | Yes              | No             | No         | No             | No            | No       |
+| **WebRTC Leak Test**        | No                    | No         | Yes        | Yes       | Yes              | No             | No         | No             | No            | No       |
+| **Speed Test**              | Yes                   | No         | No         | Yes       | No               | No             | No         | No             | No            | No       |
+| **Port Scanning**           | No                    | No         | No         | No        | No               | Yes            | No         | No             | No            | No       |
+| **VPN/Proxy/Tor Detection** | Yes                   | Yes (paid) | Partial    | Yes       | Partial          | Yes            | No         | No             | No            | No       |
+| **Browser Fingerprinting**  | No                    | No         | No         | Basic     | Deep             | No             | No         | No             | No            | No       |
+| **Anonymity Score**         | No                    | No         | No         | Yes       | No               | No             | No         | No             | No            | No       |
+| **API Available**           | No                    | Yes        | No         | No        | No               | No             | Yes        | Yes            | No            | Yes      |
+| **CLI-Friendly**            | No                    | Yes        | No         | No        | No               | No             | Yes        | Yes            | No            | No       |
+| **Blacklist Check**         | Yes                   | No         | No         | No        | No               | Yes            | No         | No             | No            | No       |
+| **WHOIS Lookup**            | No                    | No         | No         | No        | No               | Yes            | No         | No             | No            | No       |
+| **Traceroute**              | No                    | No         | No         | No        | No               | Yes            | No         | No             | No            | No       |
+| **Privacy-First**           | Moderate              | Yes        | Yes        | Moderate  | Yes              | Moderate       | Yes        | Yes            | Yes           | Moderate |
+| **UI/UX Quality**           | Good (dated)          | Excellent  | Functional | Good      | Good (technical) | Good           | Minimal    | Minimal        | Retro         | Basic    |
 
 ---
 
 ## Competitor Profiles
 
 ### whatismyipaddress.com
+
 The well-known generalist. Shows IPv4/IPv6, geolocation, ISP, proxy detection, blacklist check, speed test, and email tracing. Has community forums. UI is functional but ad-heavy. No API. No leak testing.
 
 ### ipinfo.io
+
 The developer/enterprise leader. Processed 1.4 trillion API requests in 2025. Offers tiered API (Lite free with country-only geo, Core and Plus paid tiers). Excellent data quality with proprietary algorithms. Best-in-class for programmatic access but not a consumer privacy tool.
 
 ### ipleak.net
+
 The VPN user's go-to. Auto-runs IP detection, DNS leak test, and WebRTC leak test on page load. Also detects torrent client IP leakage. Simple, no-frills interface. No API. Excellent for quick privacy audits.
 
 ### whoer.net
+
 The most comprehensive privacy auditor. Unique anonymity scoring system (0-100%). Checks IP, DNS leaks, WebRTC leaks, browser fingerprint, VPN/proxy/Tor detection, and includes a speed test. Detects inconsistencies between IP location and browser settings. Has become commercialized with VPN upsells.
 
 ### browserleaks.com
+
 The deepest fingerprinting toolkit. Tests for: Canvas fingerprinting, WebGL fingerprinting, font fingerprinting, JavaScript capabilities, TLS/SSL analysis (JA3/JA4), WebRTC leaks, DNS leaks, HTTP/2 fingerprinting, QUIC/HTTP3 fingerprinting, and TCP/IP OS fingerprinting. Does not collect personal data or store fingerprints.
 
 ### whatismyip.com
+
 The broadest toolbox. Operating since 1999. Offers IP lookup, WHOIS, hostname lookup, server headers check, blacklist check, traceroute, user agent info, DNS lookup, port scanner, and SSL certificate checker.
 
 ### ip-api.com
+
 Free API for non-commercial use. JSON/XML/CSV endpoints, no API key needed, 45 req/min rate limit. Anycast network with sub-50ms response times globally. No web UI features beyond the API.
 
 ### ifconfig.me / ifconfig.co
+
 The developer's CLI companion. Designed for `curl` usage. ifconfig.co supports endpoints like `/country`, `/city`, `/asn`, `/json`. Rate limited to 1 req/min for automation. Minimal web UI.
 
 ### ipchicken.com
+
 The nostalgic minimalist. 24+ years old. Shows your IP and basic ISP info. Nothing else.
 
 ### myip.com
+
 Basic IP checker with a JSON API (no request limits beyond server capacity). Minimal feature set on the web UI. The API is its differentiator.
 
 ---

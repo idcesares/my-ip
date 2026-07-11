@@ -1,84 +1,147 @@
 "use client";
 
-import { ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
+import { Eye, ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { WebRTCLeakResult } from "@/types";
+import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
 
 interface WebRTCLeakCardProps {
-  result: WebRTCLeakResult;
+  assessment: WebRTCAssessment;
   scanning: boolean;
   onScan: () => void;
 }
 
-export function WebRTCLeakCard({ result, scanning, onScan }: WebRTCLeakCardProps) {
-  const hasRun = result.supported || result.error !== null;
+function AddressGroup({
+  label,
+  addresses,
+}: {
+  label: string;
+  addresses: string[];
+}) {
+  if (addresses.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-1 text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {addresses.map((address) => (
+          <code
+            key={address}
+            className="max-w-full break-all rounded border px-2 py-0.5 text-xs"
+          >
+            {address}
+          </code>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const STATUS_LABEL: Record<WebRTCAssessment["status"], string> = {
+  "not-run": "Not tested",
+  unavailable: "Unavailable",
+  "none-observed": "None observed",
+  "expected-address": "Expected address only",
+  "additional-exposure": "Additional exposure",
+};
+
+export function WebRTCLeakCard({
+  assessment,
+  scanning,
+  onScan,
+}: WebRTCLeakCardProps) {
+  const hasRun = assessment.status !== "not-run";
+  const isAttention = assessment.attention;
+  const isNone = assessment.status === "none-observed";
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Wifi className="h-4 w-4 text-sky-500" />
-          WebRTC Leak Test
-          {hasRun && (
-            <Badge variant={result.leaking ? "secondary" : "default"} className={`ml-auto rounded-full px-2 py-0.5 text-xs ${result.leaking ? "border-[hsl(var(--destructive))]/50 text-[hsl(var(--destructive))]" : ""}`}>
-              {result.leaking ? "Leaking" : "No leak"}
-            </Badge>
-          )}
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+          <Wifi aria-hidden="true" className="h-4 w-4 text-sky-500" />
+          WebRTC address exposure test
+          <Badge
+            variant={isAttention ? "secondary" : "outline"}
+            className={`ml-auto rounded-full px-2 py-0.5 text-xs ${isAttention ? "border-[hsl(var(--destructive))]/50 text-[hsl(var(--destructive))]" : ""}`}
+          >
+            {STATUS_LABEL[assessment.status]}
+          </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {!hasRun && (
+      <CardContent className="space-y-3" aria-busy={scanning}>
+        {!hasRun ? (
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Check if your browser leaks your real IP via WebRTC (STUN requests).
+            Compare WebRTC ICE candidate addresses with the public address used
+            for this page request. The test contacts the configured public STUN
+            servers.
           </p>
-        )}
+        ) : (
+          <div className="space-y-3 text-sm" aria-live="polite">
+            <div
+              className={`flex items-start gap-2 rounded-lg border p-3 ${isAttention ? "border-[hsl(var(--destructive))]/35 bg-[hsl(var(--destructive))]/10" : isNone ? "border-emerald-500/35 bg-emerald-500/10" : "bg-[hsl(var(--muted))/0.45]"}`}
+            >
+              {isAttention ? (
+                <ShieldAlert
+                  aria-hidden="true"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+              ) : isNone ? (
+                <ShieldCheck
+                  aria-hidden="true"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                />
+              ) : (
+                <Eye
+                  aria-hidden="true"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-sky-500"
+                />
+              )}
+              <span>{assessment.summary}</span>
+            </div>
 
-        {hasRun && result.error && (
-          <p className="text-sm text-[hsl(var(--destructive))]">{result.error}</p>
-        )}
+            <AddressGroup
+              label="Additional public addresses"
+              addresses={assessment.additionalPublicAddresses}
+            />
+            <AddressGroup
+              label="Literal private addresses"
+              addresses={assessment.privateAddresses}
+            />
+            <AddressGroup
+              label="Current request address"
+              addresses={assessment.expectedPublicAddresses}
+            />
+            <AddressGroup
+              label="mDNS-masked host candidates"
+              addresses={assessment.maskedHostnames}
+            />
+            <AddressGroup
+              label="Other candidate identifiers"
+              addresses={assessment.otherAddresses}
+            />
 
-        {hasRun && !result.error && (
-          <div className="space-y-2 text-sm">
-            {result.leaking ? (
-              <div className="flex items-start gap-2 rounded-lg border border-[hsl(var(--destructive))]/35 bg-[hsl(var(--destructive))]/10 p-3">
-                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Your browser exposes IP addresses via WebRTC even if you use a VPN.</span>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2 rounded-lg border border-emerald-500/35 bg-emerald-500/10 p-3">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                <span>No WebRTC IP leak detected.</span>
-              </div>
-            )}
-
-            {result.localIPs.length > 0 && (
-              <div>
-                <p className="mb-1 text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">Local IPs exposed</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {result.localIPs.map((ip) => (
-                    <code key={ip} className="rounded border px-2 py-0.5 text-xs">{ip}</code>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {result.publicIPs.length > 0 && (
-              <div>
-                <p className="mb-1 text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">Public IPs exposed</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {result.publicIPs.map((ip) => (
-                    <code key={ip} className="rounded border px-2 py-0.5 text-xs">{ip}</code>
-                  ))}
-                </div>
-              </div>
+            {assessment.timedOut && (
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                The five-second collection window ended before the browser
+                signaled completion; shown candidates are partial.
+              </p>
             )}
           </div>
         )}
 
-        <Button variant="outline" className="w-full" disabled={scanning} onClick={onScan}>
-          {scanning ? "Scanning…" : hasRun ? "Re-scan" : "Run WebRTC Leak Test"}
+        <Button
+          variant="outline"
+          className="min-h-11 w-full whitespace-normal"
+          disabled={scanning}
+          onClick={onScan}
+        >
+          {scanning
+            ? "Collecting candidates…"
+            : hasRun
+              ? "Run again"
+              : "Run WebRTC test"}
         </Button>
       </CardContent>
     </Card>

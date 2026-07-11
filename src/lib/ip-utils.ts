@@ -48,6 +48,12 @@ export function isPrivateIP(ip: string): boolean {
   return privateRanges.has(range);
 }
 
+/** True only for globally routable unicast addresses. */
+export function isPublicIP(ip: string): boolean {
+  const parsed = parseSafe(ip);
+  return parsed?.range() === "unicast";
+}
+
 export function isCGNAT(ip: string): boolean {
   const parsed = parseSafe(ip);
   if (!parsed || parsed.kind() !== "ipv4") return false;
@@ -56,16 +62,25 @@ export function isCGNAT(ip: string): boolean {
 
 export function getIPCategory(
   ip: string,
-): "Public" | "Private" | "CGNAT" | "Loopback" | "Link-Local" {
+):
+  | "Public"
+  | "Private"
+  | "CGNAT"
+  | "Loopback"
+  | "Link-Local"
+  | "Reserved"
+  | "Multicast"
+  | "Unspecified" {
   const parsed = parseSafe(ip);
-  if (!parsed) return "Private";
+  if (!parsed) return "Reserved";
 
   if (isCGNAT(ip)) return "CGNAT";
 
   const range = parsed.range();
   if (range === "loopback") return "Loopback";
   if (range === "linkLocal") return "Link-Local";
+  if (range === "multicast") return "Multicast";
+  if (range === "unspecified") return "Unspecified";
   if (isPrivateIP(ip)) return "Private";
-
-  return "Public";
+  return range === "unicast" ? "Public" : "Reserved";
 }

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { detectIPVersion, getIPCategory, isCGNAT, isPrivateIP, isValidIP, stripPort } from "@/lib/ip-utils";
+import {
+  detectIPVersion,
+  getIPCategory,
+  isCGNAT,
+  isPrivateIP,
+  isPublicIP,
+  isValidIP,
+  stripPort,
+} from "@/lib/ip-utils";
 
 describe("ip-utils", () => {
   describe("isValidIP", () => {
@@ -76,6 +84,27 @@ describe("ip-utils", () => {
     });
   });
 
+  describe("isPublicIP", () => {
+    it("accepts only globally routable unicast addresses", () => {
+      expect(isPublicIP("8.8.8.8")).toBe(true);
+      expect(isPublicIP("2606:4700:4700::1111")).toBe(true);
+    });
+
+    it("rejects documentation, multicast, reserved, and private ranges", () => {
+      for (const ip of [
+        "192.0.2.1",
+        "198.51.100.1",
+        "203.0.113.1",
+        "2001:db8::1",
+        "224.0.0.1",
+        "240.0.0.1",
+        "10.0.0.1",
+      ]) {
+        expect(isPublicIP(ip)).toBe(false);
+      }
+    });
+  });
+
   describe("isCGNAT", () => {
     it("identifies CGNAT range (100.64.0.0/10)", () => {
       expect(isCGNAT("100.64.0.1")).toBe(true);
@@ -146,12 +175,19 @@ describe("ip-utils", () => {
 
     it("categorizes public IPs", () => {
       expect(getIPCategory("8.8.8.8")).toBe("Public");
-      expect(getIPCategory("203.0.113.42")).toBe("Public");
+      expect(getIPCategory("2606:4700:4700::1111")).toBe("Public");
     });
 
-    it("returns Private for invalid input", () => {
-      expect(getIPCategory("")).toBe("Private");
-      expect(getIPCategory("not-valid")).toBe("Private");
+    it("distinguishes special-use address categories", () => {
+      expect(getIPCategory("203.0.113.42")).toBe("Reserved");
+      expect(getIPCategory("2001:db8::1")).toBe("Reserved");
+      expect(getIPCategory("224.0.0.1")).toBe("Multicast");
+      expect(getIPCategory("0.0.0.0")).toBe("Unspecified");
+    });
+
+    it("returns Reserved for invalid input", () => {
+      expect(getIPCategory("")).toBe("Reserved");
+      expect(getIPCategory("not-valid")).toBe("Reserved");
     });
   });
 });

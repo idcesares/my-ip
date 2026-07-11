@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { computePrivacyScore } from "@/lib/privacy-score";
-import type { BrowserDiagnostics, IPInfo, WebRTCLeakResult } from "@/types";
+import {
+  computeDiagnosticAssessment,
+  type BrowserDiagnosticsSnapshot,
+} from "@/lib/privacy-score";
+import { assessWebRTCExposure } from "@/lib/webrtc-diagnostics";
+import type { IPInfo, WebRTCLeakResult } from "@/types";
 
 function makeIPInfo(overrides: Partial<IPInfo> = {}): IPInfo {
   return {
@@ -9,11 +13,16 @@ function makeIPInfo(overrides: Partial<IPInfo> = {}): IPInfo {
     ipv4: "203.0.113.1",
     ipv6: null,
     isPublic: true,
-    source: "cloudflare",
+    source: "x-real-ip",
     confidence: "high",
-    relayLikely: false,
+    provenance: {
+      provider: "vercel",
+      header: "x-real-ip",
+      trusted: true,
+      forwarded: true,
+    },
     category: "Public",
-    timestamp: new Date().toISOString(),
+    timestamp: "2026-07-11T00:00:00.000Z",
     warnings: [],
     request: { userAgent: "test", language: "en", protocol: "https" },
     location: null,
@@ -22,14 +31,16 @@ function makeIPInfo(overrides: Partial<IPInfo> = {}): IPInfo {
   };
 }
 
-function makeDiagnostics(overrides: Partial<BrowserDiagnostics> = {}): BrowserDiagnostics {
+function makeDiagnostics(
+  headerStatus: BrowserDiagnosticsSnapshot["security"]["responseHeadersStatus"] = "measured",
+): BrowserDiagnosticsSnapshot {
   return {
     userAgent: "test",
     languages: ["en-US"],
-    timezone: "America/New_York",
-    viewport: "1920 x 1080",
-    screenResolution: "1920 x 1080",
-    availableScreen: "1920 x 1040",
+    timezone: "UTC",
+    viewport: "1280 x 720",
+    screenResolution: "1280 x 720",
+    availableScreen: "1280 x 680",
     pixelRatio: 1,
     colorDepth: 24,
     online: true,
@@ -41,7 +52,7 @@ function makeDiagnostics(overrides: Partial<BrowserDiagnostics> = {}): BrowserDi
       rtt: 50,
       saveData: null,
       changedAt: null,
-      apiRttMs: null,
+      pageFetchMs: 20,
     },
     preferences: {
       colorScheme: "dark",
@@ -50,213 +61,127 @@ function makeDiagnostics(overrides: Partial<BrowserDiagnostics> = {}): BrowserDi
       touchCapable: false,
       maxTouchPoints: 0,
       cookieEnabled: true,
-      doNotTrack: "1",
     },
     capabilities: {
       hardwareConcurrencyBucket: "5-8",
-      deviceMemoryBucket: "8GB",
+      deviceMemoryGB: 8,
       pdfViewerEnabled: true,
       secureContext: true,
       crossOriginIsolated: false,
     },
     privacy: {
-      firstPartyCookieCount: 0,
+      scriptVisibleCookieCount: 0,
       permissions: {
-        notifications: "denied",
-        geolocation: "denied",
-        camera: "denied",
-        microphone: "denied",
+        notifications: "unsupported",
+        geolocation: "unsupported",
+        camera: "unsupported",
+        microphone: "unsupported",
       },
     },
     security: {
       protocol: "https:",
-      referrerPolicy: null,
       responseHeaders: {
-        csp: null,
+        csp: "default-src 'self'",
         referrerPolicy: null,
-        permissionsPolicy: null,
-        xFrameOptions: null,
-        xContentTypeOptions: null,
-        cacheControl: null,
+        permissionsPolicy: "camera=()",
+        xFrameOptions: "DENY",
+        xContentTypeOptions: "nosniff",
+        cacheControl: "no-store",
       },
+      responseHeadersStatus: headerStatus,
     },
-    ...overrides,
   };
 }
 
-describe("computePrivacyScore", () => {
-  it("returns null when ip or diagnostics is null", () => {
-    expect(computePrivacyScore(null, null, null)).toBeNull();
-    expect(computePrivacyScore(makeIPInfo(), null, null)).toBeNull();
-    expect(computePrivacyScore(null, makeDiagnostics(), null)).toBeNull();
+describe("computeDiagnosticAssessment", () => {
+  const notRun = assessWebRTCExposure(null, makeIPInfo());
+
+  it("returns null until IP and browser observations exist", () => {
+    expect(computeDiagnosticAssessment(null, null, notRun)).toBeNull();
+    expect(computeDiagnosticAssessment(makeIPInfo(), null, notRun)).toBeNull();
   });
 
-  it("returns a score between 0 and 100", () => {
-    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), null);
-    expect(result).not.toBeNull();
-    expect(result!.overall).toBeGreaterThanOrEqual(0);
-    expect(result!.overall).toBeLessThanOrEqual(100);
+  it("returns factual findings without a numeric score or grade", () => {
+    const result = computeDiagnosticAssessment(
+      makeIPInfo(),
+      makeDiagnostics(),
+      notRun,
+    )!;
+    expect(result.findings.length).toBeGreaterThan(0);
+    expect(result).not.toHaveProperty("overall");
+    expect(result).not.toHaveProperty("grade");
+    expect(
+      result.findings.find((item) => item.id === "ip-source")?.detail,
+    ).toContain("vercel");
   });
 
-  it("returns a valid grade", () => {
-    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), null);
-    expect(["A+", "A", "B", "C", "D", "F"]).toContain(result!.grade);
+  it("does not call unmeasured headers missing", () => {
+    const result = computeDiagnosticAssessment(
+      makeIPInfo(),
+      makeDiagnostics("checking"),
+      notRun,
+    )!;
+    const csp = result.findings.find((item) => item.id === "csp")!;
+    expect(csp.status).toBe("unavailable");
+    expect(csp.detail).toContain("Checking");
+    expect(csp.detail).not.toContain("not observed");
   });
 
-  it("includes checks array", () => {
-    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), null);
-    expect(result!.checks.length).toBeGreaterThan(0);
-    for (const check of result!.checks) {
-      expect(check).toHaveProperty("id");
-      expect(check).toHaveProperty("label");
-      expect(check).toHaveProperty("status");
-      expect(check).toHaveProperty("detail");
-      expect(check).toHaveProperty("weight");
-      expect(["pass", "warn", "fail"]).toContain(check.status);
-    }
+  it("reports measured absent headers as informational evidence", () => {
+    const diagnostics = makeDiagnostics();
+    diagnostics.security.responseHeaders.csp = null;
+    const result = computeDiagnosticAssessment(
+      makeIPInfo(),
+      diagnostics,
+      notRun,
+    )!;
+    const csp = result.findings.find((item) => item.id === "csp")!;
+    expect(csp.status).toBe("informational");
+    expect(csp.detail).toContain("not observed");
   });
 
-  it("HTTPS pass gives better score than HTTP fail", () => {
-    const httpsIP = makeIPInfo({ request: { userAgent: "test", language: "en", protocol: "https" } });
-    const httpIP = makeIPInfo({ request: { userAgent: "test", language: "en", protocol: "http" } });
-    const diag = makeDiagnostics();
-
-    const httpsScore = computePrivacyScore(httpsIP, diag, null)!;
-    const httpScore = computePrivacyScore(httpIP, diag, null)!;
-
-    expect(httpsScore.overall).toBeGreaterThan(httpScore.overall);
-  });
-
-  it("WebRTC leak causes fail check", () => {
-    const leak: WebRTCLeakResult = {
+  it("softens a clean WebRTC result to an observation", () => {
+    const noCandidate: WebRTCLeakResult = {
       supported: true,
-      leaking: true,
-      localIPs: ["192.168.1.1"],
-      publicIPs: ["203.0.113.1"],
+      completed: true,
+      timedOut: false,
+      candidates: [],
       error: null,
     };
-
-    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), leak);
-    const webrtcCheck = result!.checks.find((c) => c.id === "webrtc");
-    expect(webrtcCheck).toBeDefined();
-    expect(webrtcCheck!.status).toBe("fail");
+    const assessment = assessWebRTCExposure(noCandidate, makeIPInfo());
+    const result = computeDiagnosticAssessment(
+      makeIPInfo(),
+      makeDiagnostics(),
+      assessment,
+    )!;
+    expect(
+      result.findings.find((item) => item.id === "webrtc")?.detail,
+    ).toContain("No literal or mDNS candidate address");
   });
 
-  it("no WebRTC leak gives pass", () => {
-    const noLeak: WebRTCLeakResult = {
+  it("flags observed WebRTC candidates for attention", () => {
+    const candidate: WebRTCLeakResult = {
       supported: true,
-      leaking: false,
-      localIPs: [],
-      publicIPs: [],
+      completed: true,
+      timedOut: false,
+      candidates: [
+        {
+          address: "192.168.1.1",
+          addressKind: "private",
+          candidateType: "host",
+          protocol: "udp",
+        },
+      ],
       error: null,
     };
-
-    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), noLeak);
-    const webrtcCheck = result!.checks.find((c) => c.id === "webrtc");
-    expect(webrtcCheck).toBeDefined();
-    expect(webrtcCheck!.status).toBe("pass");
-  });
-
-  it("detects timezone mismatch as consistency issue", () => {
-    const ip = makeIPInfo({
-      location: {
-        city: "Tokyo",
-        region: "Tokyo",
-        country: "JP",
-        timezone: "Asia/Tokyo",
-        coordinates: { latitude: 35.6762, longitude: 139.6503 },
-      },
-    });
-    const diag = makeDiagnostics({ timezone: "America/New_York" });
-
-    const result = computePrivacyScore(ip, diag, null);
-    expect(result!.consistencyIssues.length).toBeGreaterThan(0);
-    expect(result!.consistencyIssues[0]).toContain("Timezone mismatch");
-  });
-
-  it("detects language mismatch as consistency issue", () => {
-    const ip = makeIPInfo({
-      location: {
-        city: "Tokyo",
-        region: "Tokyo",
-        country: "JP",
-        timezone: "Asia/Tokyo",
-        coordinates: { latitude: 35.6762, longitude: 139.6503 },
-      },
-    });
-    const diag = makeDiagnostics({ timezone: "Asia/Tokyo", languages: ["en-US"] });
-
-    const result = computePrivacyScore(ip, diag, null);
-    const langIssue = result!.consistencyIssues.find((i) => i.includes("Language mismatch"));
-    expect(langIssue).toBeDefined();
-  });
-
-  it("no consistency issues when timezone and language match", () => {
-    const ip = makeIPInfo({
-      location: {
-        city: "New York",
-        region: "New York",
-        country: "US",
-        timezone: "America/New_York",
-        coordinates: { latitude: 40.7, longitude: -74.0 },
-      },
-    });
-    const diag = makeDiagnostics({ timezone: "America/New_York", languages: ["en-US"] });
-
-    const result = computePrivacyScore(ip, diag, null);
-    expect(result!.consistencyIssues).toHaveLength(0);
-  });
-
-  it("DNT enabled gives pass", () => {
-    const diag = makeDiagnostics({
-      preferences: {
-        colorScheme: "dark",
-        reducedMotion: false,
-        highContrast: false,
-        touchCapable: false,
-        maxTouchPoints: 0,
-        cookieEnabled: true,
-        doNotTrack: "1",
-      },
-    });
-
-    const result = computePrivacyScore(makeIPInfo(), diag, null);
-    const dntCheck = result!.checks.find((c) => c.id === "dnt");
-    expect(dntCheck!.status).toBe("pass");
-  });
-
-  it("always includes CSP and X-Frame-Options checks even when headers are null", () => {
-    const result = computePrivacyScore(makeIPInfo(), makeDiagnostics(), null);
-    const cspCheck = result!.checks.find((c) => c.id === "csp");
-    const xFrameCheck = result!.checks.find((c) => c.id === "x-frame");
-    expect(cspCheck).toBeDefined();
-    expect(cspCheck!.status).toBe("warn");
-    expect(xFrameCheck).toBeDefined();
-    expect(xFrameCheck!.status).toBe("warn");
-  });
-
-  it("does not flag relay + public IP as a consistency issue", () => {
-    const ip = makeIPInfo({ relayLikely: true, category: "Public" });
-    const result = computePrivacyScore(ip, makeDiagnostics(), null);
-    const relayIssue = result!.consistencyIssues.find((i) => i.includes("relayed"));
-    expect(relayIssue).toBeUndefined();
-  });
-
-  it("DNT disabled gives warn", () => {
-    const diag = makeDiagnostics({
-      preferences: {
-        colorScheme: "dark",
-        reducedMotion: false,
-        highContrast: false,
-        touchCapable: false,
-        maxTouchPoints: 0,
-        cookieEnabled: true,
-        doNotTrack: null,
-      },
-    });
-
-    const result = computePrivacyScore(makeIPInfo(), diag, null);
-    const dntCheck = result!.checks.find((c) => c.id === "dnt");
-    expect(dntCheck!.status).toBe("warn");
+    const assessment = assessWebRTCExposure(candidate, makeIPInfo());
+    const result = computeDiagnosticAssessment(
+      makeIPInfo(),
+      makeDiagnostics(),
+      assessment,
+    )!;
+    expect(result.findings.find((item) => item.id === "webrtc")?.status).toBe(
+      "attention",
+    );
   });
 });

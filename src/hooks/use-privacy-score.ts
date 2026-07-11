@@ -1,16 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-import { computePrivacyScore } from "@/lib/privacy-score";
-import type { BrowserDiagnostics, IPInfo, PrivacyScore, WebRTCLeakResult } from "@/types";
+import {
+  computeDiagnosticAssessment,
+  type BrowserDiagnosticsSnapshot,
+  type DiagnosticAssessment,
+} from "@/lib/privacy-score";
+import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
+import type { IPInfo } from "@/types";
 
-export function usePrivacyScore(
+export function useDiagnosticAssessment(
   ip: IPInfo | null,
-  diagnostics: BrowserDiagnostics | null,
-  webrtc: WebRTCLeakResult | null
-): PrivacyScore | null {
+  diagnostics: BrowserDiagnosticsSnapshot | null,
+  webrtc: WebRTCAssessment,
+): DiagnosticAssessment | null {
   return useMemo(
-    () => computePrivacyScore(ip, diagnostics, webrtc),
-    [ip, diagnostics, webrtc]
+    () => computeDiagnosticAssessment(ip, diagnostics, webrtc),
+    [ip, diagnostics, webrtc],
   );
 }
