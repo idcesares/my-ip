@@ -14,13 +14,27 @@ import type {
   HeaderMeasurementStatus,
 } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+function PanelHeading({
+  icon: Icon,
+  children,
+}: {
+  icon: typeof Globe2;
+  children: React.ReactNode;
+}) {
+  return (
+    <h3 className="mb-3 flex items-center gap-2 border-b border-[hsl(var(--border))] pb-2 font-mono text-xs font-bold uppercase tracking-[0.1em] text-[hsl(var(--foreground))]">
+      <Icon className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
+      {children}
+    </h3>
+  );
+}
 
 function headerValue(status: HeaderMeasurementStatus, value: string | null) {
   if (status === "checking") return "Checking…";
@@ -70,7 +84,7 @@ function Row({
           </Tooltip>
         ) : null}
       </span>
-      <span className="min-w-0 break-words text-right font-semibold leading-snug">
+      <span className="min-w-0 break-words text-right font-mono text-[13px] font-semibold leading-snug [font-variant-numeric:tabular-nums]">
         {v ?? "Unavailable"}
       </span>
     </div>
@@ -88,19 +102,11 @@ export const InfoGrid = memo(function InfoGrid({
 }) {
   if (!data) {
     return (
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardContent className="h-44" />
-        </Card>
-        <Card>
-          <CardContent className="h-44" />
-        </Card>
-        <Card>
-          <CardContent className="h-44" />
-        </Card>
-        <Card>
-          <CardContent className="h-44" />
-        </Card>
+      <div className="grid gap-px border border-[hsl(var(--border))] bg-[hsl(var(--border))] lg:grid-cols-2 xl:grid-cols-4">
+        <div className="h-44 bg-[hsl(var(--card))]" />
+        <div className="h-44 bg-[hsl(var(--card))]" />
+        <div className="h-44 bg-[hsl(var(--card))]" />
+        <div className="h-44 bg-[hsl(var(--card))]" />
       </div>
     );
   }
@@ -108,8 +114,8 @@ export const InfoGrid = memo(function InfoGrid({
   return (
     <TooltipProvider>
       <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-sm font-semibold tracking-wide text-[hsl(var(--muted-foreground))]">
-          Browser &amp; network signals
+        <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+          Diagnostic panels
         </h2>
         <Button
           type="button"
@@ -131,16 +137,11 @@ export const InfoGrid = memo(function InfoGrid({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.08 }}
-        className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-px border border-[hsl(var(--border))] bg-[hsl(var(--border))] lg:grid-cols-2 xl:grid-cols-4"
       >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe2 className="h-4 w-4 text-sky-500" />
-              Network Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-[hsl(var(--card))] p-4">
+          <PanelHeading icon={Globe2}>Network</PanelHeading>
+          <div>
             <Row
               k="Online hint"
               v={yesNo(data.online)}
@@ -214,17 +215,12 @@ export const InfoGrid = memo(function InfoGrid({
                 />
               </>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MonitorCog className="h-4 w-4 text-cyan-500" />
-              Browser Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-[hsl(var(--card))] p-4">
+          <PanelHeading icon={MonitorCog}>Browser</PanelHeading>
+          <div>
             <Row
               k="Language"
               v={data.languages[0]}
@@ -280,17 +276,12 @@ export const InfoGrid = memo(function InfoGrid({
                 />
               </>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
-              Privacy & Security
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-[hsl(var(--card))] p-4">
+          <PanelHeading icon={ShieldCheck}>Privacy &amp; Security</PanelHeading>
+          <div>
             <Row
               k="Color Scheme"
               v={data.preferences.colorScheme}
@@ -340,17 +331,14 @@ export const InfoGrid = memo(function InfoGrid({
                 />
               </>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-slate-500" />
-              Security Headers & Permissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-[hsl(var(--card))] p-4">
+          <PanelHeading icon={LockKeyhole}>
+            Security Headers &amp; Permissions
+          </PanelHeading>
+          <div>
             <Row
               k="Protocol"
               v={data.security.protocol.replace(":", "").toUpperCase()}
@@ -404,8 +392,8 @@ export const InfoGrid = memo(function InfoGrid({
                 />
               </>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </m.div>
     </TooltipProvider>
   );
