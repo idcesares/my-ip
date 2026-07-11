@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { domAnimation, LazyMotion, m } from "framer-motion";
-import { Code2, RefreshCw, ShieldCheck } from "lucide-react";
+import { Code2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ActionBar } from "@/components/action-bar";
 import { HistoryTable } from "@/components/history-table";
@@ -52,49 +52,47 @@ export function HomePageClient() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="surface-card mb-10 rounded-3xl p-5 md:p-6"
+          className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-4"
         >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:gap-4">
-              <LogoMark />
-              <div className="min-w-0">
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-[hsl(var(--background))/0.7] px-3 py-1 text-xs font-semibold tracking-wide text-[hsl(var(--muted-foreground))]">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  Privacy-First Diagnostics
-                </div>
-                <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">
-                  What&apos;s My IP?
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] md:text-base">
-                  Instant IP visibility with no tracking. Understand the
-                  address, browser-reported signals, and security controls this
-                  connection exposes.
-                </p>
-              </div>
-            </div>
+          <div className="flex min-w-0 items-center gap-3">
+            <LogoMark />
+            <span className="truncate font-mono text-xs font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+              What&apos;s My IP — Network Diagnostics
+            </span>
+          </div>
 
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-              <Button asChild variant="outline" className="min-h-11">
-                <a href="/api/ip" target="_blank" rel="noreferrer">
-                  <Code2 className="h-4 w-4" /> API
-                </a>
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-11 w-11"
-                aria-label={isLoading ? "Refreshing data" : "Refresh data"}
-                disabled={isLoading}
-                onClick={() => mutate()}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-                />
-              </Button>
-              <ThemeToggle />
-            </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <Button asChild variant="outline" className="min-h-11">
+              <a href="/api/ip" target="_blank" rel="noreferrer">
+                <Code2 className="h-4 w-4" /> API
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-11 w-11"
+              aria-label={isLoading ? "Refreshing data" : "Refresh data"}
+              disabled={isLoading}
+              onClick={() => mutate()}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              />
+            </Button>
+            <ThemeToggle />
           </div>
         </m.header>
+
+        <div className="mb-6">
+          <p className="mb-1.5 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+            <span className="eyebrow-dot" aria-hidden="true" /> Live · No
+            tracking · No analytics
+          </p>
+          <h1 className="max-w-2xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] md:text-base">
+            Instant IP visibility with browser-reported network, security, and
+            privacy signals for this connection.
+          </h1>
+        </div>
 
         <section className="space-y-6" aria-busy={isLoading}>
           {isLoading && (
@@ -141,6 +139,10 @@ export function HomePageClient() {
             onToggleAdvanced={() => setShowAdvancedMetrics((value) => !value)}
           />
 
+          <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+            Secondary checks
+          </p>
+
           <WebRTCLeakCard
             assessment={webrtc.assessment}
             scanning={webrtc.scanning}
@@ -167,7 +169,7 @@ export function HomePageClient() {
               <TabsContent value="raw">
                 <Card>
                   <CardContent className="pt-6">
-                    <pre className="overflow-x-auto rounded-xl border bg-[hsl(var(--background))/0.55] p-4 text-xs">
+                    <pre className="overflow-x-auto rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-4 text-xs">
                       {JSON.stringify(ipInfo, null, 2)}
                     </pre>
                   </CardContent>

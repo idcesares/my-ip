@@ -2,18 +2,9 @@
 
 import { useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
-import {
-  AlertTriangle,
-  Globe,
-  MapPin,
-  Radar,
-  ShieldAlert,
-  Waypoints,
-} from "lucide-react";
+import { AlertTriangle, MapPin, ShieldAlert } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { IPInfo } from "@/types";
 
 interface IPAddressCardProps {
@@ -30,182 +21,142 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
       initial={reduceMotion ? false : { opacity: 0, y: 12 }}
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
+      className="border-b border-[hsl(var(--border))] pb-6"
     >
-      <Card className="grain-overlay overflow-hidden border-[hsl(var(--primary))/0.2]">
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center justify-between gap-3">
-            <span className="flex min-w-0 items-center gap-2 text-xl md:text-2xl">
-              <Radar className="h-5 w-5 text-sky-500" />
-              Your IP Address
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 border-b border-[hsl(var(--border))] pb-4">
+        <code className="min-w-0 break-all font-mono text-4xl font-bold tracking-tight [font-variant-numeric:tabular-nums] md:text-6xl">
+          {data.ip}
+        </code>
+        <span className="self-center rounded border border-[hsl(var(--primary))] px-2 py-0.5 font-mono text-xs font-bold tracking-wide text-[hsl(var(--primary))]">
+          {data.ipVersion}
+        </span>
+        <div className="ml-auto self-center">
+          <CopyButton value={data.ip} label={data.ipVersion} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-sm text-[hsl(var(--muted-foreground))]">
+        <span>
+          Provider:{" "}
+          <b className="font-semibold text-[hsl(var(--foreground))]">
+            {data.provenance.provider}
+          </b>
+        </span>
+        <span>
+          Confidence:{" "}
+          <b className="font-semibold text-[hsl(var(--foreground))]">
+            {data.confidence}
+          </b>
+        </span>
+        <span>
+          Category:{" "}
+          <b className="font-semibold text-[hsl(var(--foreground))]">
+            {data.category}
+          </b>
+        </span>
+        {data.location ? (
+          <span>
+            Location:{" "}
+            <b className="font-semibold text-[hsl(var(--foreground))]">
+              {[data.location.city, data.location.country]
+                .filter(Boolean)
+                .join(", ") || "Unknown"}
+            </b>
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+            IPv4
+          </p>
+          <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[hsl(var(--border))] pb-2">
+            <code className="min-w-0 flex-1 break-all font-mono text-sm [font-variant-numeric:tabular-nums] md:text-base">
+              {data.ipv4 ?? "Unavailable"}
+            </code>
+            <CopyButton value={data.ipv4} label="IPv4" />
+          </div>
+        </div>
+        <div>
+          <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+            IPv6
+          </p>
+          <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[hsl(var(--border))] pb-2">
+            <code className="min-w-0 flex-1 break-all font-mono text-sm [font-variant-numeric:tabular-nums] md:text-base">
+              {data.ipv6 ?? "Unavailable"}
+            </code>
+            <CopyButton value={data.ipv6} label="IPv6" />
+          </div>
+        </div>
+      </div>
+
+      {data.location ? (
+        <div className="mt-4 grid gap-1 text-sm sm:grid-cols-2 md:grid-cols-4">
+          <p className="text-[hsl(var(--muted-foreground))]">
+            Region:{" "}
+            <span className="font-medium text-[hsl(var(--foreground))]">
+              {data.location.region ?? "Unknown"}
             </span>
-            <Badge
-              variant={data.isPublic ? "default" : "secondary"}
-              className="rounded-full px-3 py-1"
-            >
-              {data.ipVersion}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border bg-[hsl(var(--background))/0.55] p-4">
-            <div className="min-w-0 flex-1">
-              <p className="mb-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
-                Primary IP
-              </p>
-              <code className="break-all text-2xl font-semibold tracking-tight md:text-4xl">
-                {data.ip}
-              </code>
-            </div>
-            <CopyButton value={data.ip} label={data.ipVersion} />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border bg-[hsl(var(--background))/0.45] p-4">
-              <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
-                <Globe className="h-3.5 w-3.5" /> IPv4
-              </div>
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <code className="min-w-0 flex-1 break-all text-sm md:text-base">
-                  {data.ipv4 ?? "Unavailable"}
-                </code>
-                <CopyButton value={data.ipv4} label="IPv4" />
-              </div>
-            </div>
-            <div className="rounded-xl border bg-[hsl(var(--background))/0.45] p-4">
-              <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
-                <Waypoints className="h-3.5 w-3.5" /> IPv6
-              </div>
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <code className="min-w-0 flex-1 break-all text-sm md:text-base">
-                  {data.ipv6 ?? "Unavailable"}
-                </code>
-                <CopyButton value={data.ipv6} label="IPv6" />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-[hsl(var(--background))/0.45] p-3 text-sm">
-            <div className="grid gap-1 sm:grid-cols-2">
-              <p className="text-[hsl(var(--muted-foreground))]">
-                Provider:{" "}
-                <span className="font-medium text-[hsl(var(--foreground))]">
-                  {data.provenance.provider}
-                </span>
-              </p>
-              <p className="text-[hsl(var(--muted-foreground))]">
-                Header:{" "}
-                <span className="break-all font-medium text-[hsl(var(--foreground))]">
-                  {data.provenance.header ?? "none"}
-                </span>
-              </p>
-              <p className="text-[hsl(var(--muted-foreground))]">
-                Trusted by deployment:{" "}
-                <span className="font-medium text-[hsl(var(--foreground))]">
-                  {data.provenance.trusted ? "yes" : "no"}
-                </span>
-              </p>
-              <p className="text-[hsl(var(--muted-foreground))]">
-                Confidence:{" "}
-                <span className="font-medium text-[hsl(var(--foreground))]">
-                  {data.confidence}
-                </span>
-              </p>
-              <p className="text-[hsl(var(--muted-foreground))] sm:col-span-2">
-                Category:{" "}
-                <span className="font-medium text-[hsl(var(--foreground))]">
-                  {data.category}
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {data.location ? (
-            <div className="rounded-xl border bg-[hsl(var(--background))/0.45] p-4">
-              <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
-                <MapPin className="h-3.5 w-3.5" /> Location
-              </div>
-              <div className="grid gap-1 text-sm md:grid-cols-2">
-                <p className="text-[hsl(var(--muted-foreground))]">
-                  City:{" "}
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    {data.location.city ?? "Unknown"}
-                  </span>
-                </p>
-                <p className="text-[hsl(var(--muted-foreground))]">
-                  Region:{" "}
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    {data.location.region ?? "Unknown"}
-                  </span>
-                </p>
-                <p className="text-[hsl(var(--muted-foreground))]">
-                  Country:{" "}
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    {data.location.country ?? "Unknown"}
-                  </span>
-                </p>
-                {data.location.timezone && (
-                  <p className="text-[hsl(var(--muted-foreground))]">
-                    Timezone:{" "}
-                    <span className="font-medium text-[hsl(var(--foreground))]">
-                      {data.location.timezone}
-                    </span>
-                  </p>
-                )}
-              </div>
-              {data.isp && (
-                <div className="mt-2 grid gap-1 text-sm md:grid-cols-2">
-                  <p className="text-[hsl(var(--muted-foreground))]">
-                    ISP:{" "}
-                    <span className="font-medium text-[hsl(var(--foreground))]">
-                      {data.isp.name ?? "Unknown"}
-                    </span>
-                  </p>
-                  {data.isp.asn && (
-                    <p className="text-[hsl(var(--muted-foreground))]">
-                      ASN:{" "}
-                      <span className="font-medium text-[hsl(var(--foreground))]">
-                        {data.isp.asn}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : onFetchGeo ? (
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={geoLoading}
-              onClick={async () => {
-                setGeoLoading(true);
-                try {
-                  await onFetchGeo();
-                } finally {
-                  setGeoLoading(false);
-                }
-              }}
-            >
-              <MapPin className="h-4 w-4" />
-              {geoLoading ? "Looking up location…" : "Show Location"}
-            </Button>
-          ) : null}
-
-          {data.warnings.length > 0 && (
-            <ul className="space-y-2 rounded-xl border border-[hsl(var(--destructive))]/35 bg-[hsl(var(--destructive))]/10 p-4 text-sm">
-              {data.warnings.map((warning) => (
-                <li key={warning} className="flex items-start gap-2">
-                  {warning.toLowerCase().includes("vpn") ? (
-                    <ShieldAlert className="mt-0.5 h-4 w-4" />
-                  ) : (
-                    <AlertTriangle className="mt-0.5 h-4 w-4" />
-                  )}
-                  <span>{warning}</span>
-                </li>
-              ))}
-            </ul>
+          </p>
+          {data.location.timezone && (
+            <p className="text-[hsl(var(--muted-foreground))]">
+              Timezone:{" "}
+              <span className="font-medium text-[hsl(var(--foreground))]">
+                {data.location.timezone}
+              </span>
+            </p>
           )}
-        </CardContent>
-      </Card>
+          {data.isp?.name && (
+            <p className="text-[hsl(var(--muted-foreground))]">
+              ISP:{" "}
+              <span className="font-medium text-[hsl(var(--foreground))]">
+                {data.isp.name}
+              </span>
+            </p>
+          )}
+          {data.isp?.asn && (
+            <p className="text-[hsl(var(--muted-foreground))]">
+              ASN:{" "}
+              <span className="font-medium text-[hsl(var(--foreground))]">
+                {data.isp.asn}
+              </span>
+            </p>
+          )}
+        </div>
+      ) : onFetchGeo ? (
+        <Button
+          variant="outline"
+          className="mt-4 w-full"
+          disabled={geoLoading}
+          onClick={async () => {
+            setGeoLoading(true);
+            try {
+              await onFetchGeo();
+            } finally {
+              setGeoLoading(false);
+            }
+          }}
+        >
+          <MapPin className="h-4 w-4" />
+          {geoLoading ? "Looking up location…" : "Show Location"}
+        </Button>
+      ) : null}
+
+      {data.warnings.length > 0 && (
+        <ul className="mt-4 space-y-2 border border-[hsl(var(--destructive))]/40 bg-[hsl(var(--destructive))]/10 p-3 text-sm">
+          {data.warnings.map((warning) => (
+            <li key={warning} className="flex items-start gap-2">
+              {warning.toLowerCase().includes("vpn") ? (
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--destructive))]" />
+              ) : (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--destructive))]" />
+              )}
+              <span>{warning}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </m.section>
   );
 }

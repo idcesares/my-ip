@@ -17,32 +17,83 @@ export default function OpenGraphImage() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "54px 64px",
-        color: "#0f172a",
-        background:
-          "radial-gradient(circle at 5% 0%, rgba(34,211,238,0.34), transparent 42%), radial-gradient(circle at 100% 8%, rgba(59,130,246,0.25), transparent 46%), #f5f9ff",
-        border: "2px solid rgba(148,163,184,0.35)",
+        padding: "56px 64px",
+        color: "#eef1ec",
+        background: "#0b1119",
+        border: "2px solid #22303b",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <div
           style={{
-            display: "inline-flex",
-            width: "fit-content",
-            padding: "8px 14px",
-            borderRadius: 999,
-            border: "1px solid rgba(15,23,42,0.2)",
-            fontSize: 24,
-            color: "#334155",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 44,
+            height: 44,
+            border: "2px solid #eef1ec",
+            borderRadius: 8,
+            fontSize: 18,
+            fontWeight: 700,
           }}
         >
-          Privacy-First Diagnostics
+          IP
         </div>
-        <div style={{ fontSize: 86, fontWeight: 800, letterSpacing: -2 }}>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 22,
+            letterSpacing: 4,
+            textTransform: "uppercase",
+            color: "#93a0a6",
+          }}
+        >
+          What&apos;s My IP — Network Diagnostics
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontSize: 24,
+            letterSpacing: 3,
+            textTransform: "uppercase",
+            color: "#35c483",
+          }}
+        >
+          <div
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: 999,
+              background: "#35c483",
+            }}
+          />
+          Live · No tracking · No analytics
+        </div>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 92,
+            fontWeight: 800,
+            letterSpacing: -2,
+          }}
+        >
           What&apos;s My IP?
         </div>
-        <div style={{ fontSize: 36, color: "#334155", maxWidth: "86%" }}>
-          Instant IP, network, browser, and security visibility. No tracking.
+        <div
+          style={{
+            display: "flex",
+            fontSize: 32,
+            maxWidth: 920,
+            color: "#93a0a6",
+          }}
+        >
+          Instant IP visibility with browser-reported network, security, and
+          privacy signals. No tracking.
         </div>
       </div>
 
@@ -50,12 +101,14 @@ export default function OpenGraphImage() {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          fontSize: 28,
-          color: "#334155",
+          fontSize: 26,
+          color: "#93a0a6",
+          borderTop: "1px solid #22303b",
+          paddingTop: 24,
         }}
       >
-        <div>© 2026 Isaac D&apos;Césares</div>
-        <div>dcesares.dev</div>
+        <div style={{ display: "flex" }}>© 2026 Isaac D&apos;Césares</div>
+        <div style={{ display: "flex" }}>dcesares.dev</div>
       </div>
     </div>,
     size,

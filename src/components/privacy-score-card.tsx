@@ -19,14 +19,14 @@ function FindingIcon({ status }: { status: DiagnosticFindingStatus }) {
     return (
       <CheckCircle2
         aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-emerald-500"
+        className="h-4 w-4 shrink-0 text-[hsl(var(--ok))]"
       />
     );
   if (status === "attention")
     return (
       <AlertCircle
         aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-amber-500"
+        className="h-4 w-4 shrink-0 text-[hsl(var(--warn))]"
       />
     );
   if (status === "unavailable")
@@ -37,7 +37,10 @@ function FindingIcon({ status }: { status: DiagnosticFindingStatus }) {
       />
     );
   return (
-    <ScanSearch aria-hidden="true" className="h-4 w-4 shrink-0 text-sky-500" />
+    <ScanSearch
+      aria-hidden="true"
+      className="h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))]"
+    />
   );
 }
 
@@ -51,15 +54,15 @@ export function DiagnosticFindingsCard({
       <CardHeader className="gap-3">
         <CardTitle className="flex flex-wrap items-center justify-between gap-3 text-base">
           <span className="flex items-center gap-2">
-            <ScanSearch aria-hidden="true" className="h-4 w-4 text-sky-500" />
+            <ScanSearch
+              aria-hidden="true"
+              className="h-4 w-4 text-[hsl(var(--muted-foreground))]"
+            />
             Diagnostic findings
           </span>
           <div className="flex flex-wrap gap-1.5 text-xs">
             {assessment.summary.attention > 0 && (
-              <Badge
-                variant="outline"
-                className="text-amber-600 dark:text-amber-400"
-              >
+              <Badge variant="outline" className="text-[hsl(var(--warn))]">
                 {assessment.summary.attention} need attention
               </Badge>
             )}
@@ -84,9 +87,9 @@ export function DiagnosticFindingsCard({
             <div
               key={item.id}
               className={cn(
-                "flex min-w-0 items-start gap-2.5 rounded-lg border bg-[hsl(var(--background))/0.45] px-3 py-3 text-sm",
+                "flex min-w-0 items-start gap-2.5 border border-[hsl(var(--border))] px-3 py-3 text-sm",
                 item.status === "attention" &&
-                  "border-amber-500/35 bg-amber-500/5",
+                  "border-[hsl(var(--warn))]/40 bg-[hsl(var(--warn))]/10",
               )}
             >
               <FindingIcon status={item.status} />

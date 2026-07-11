@@ -17,20 +17,48 @@ export default function TwitterImage() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        gap: 20,
-        padding: "48px 64px",
-        color: "#0f172a",
-        background:
-          "radial-gradient(circle at 8% 0%, rgba(34,211,238,0.32), transparent 40%), radial-gradient(circle at 100% 100%, rgba(14,165,233,0.22), transparent 40%), #f8fbff",
+        gap: 24,
+        padding: "56px 72px",
+        color: "#eef1ec",
+        background: "#0b1119",
+        border: "2px solid #22303b",
       }}
     >
-      <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: -2 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          fontSize: 24,
+          letterSpacing: 3,
+          textTransform: "uppercase",
+          color: "#35c483",
+        }}
+      >
+        <div
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: 999,
+            background: "#35c483",
+          }}
+        />
+        Live · No tracking · No analytics
+      </div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 88,
+          fontWeight: 800,
+          letterSpacing: -2,
+        }}
+      >
         What&apos;s My IP?
       </div>
-      <div style={{ fontSize: 34, maxWidth: "85%", color: "#334155" }}>
+      <div style={{ display: "flex", fontSize: 34, color: "#93a0a6" }}>
         Privacy-first IP, network, browser, and security diagnostics.
       </div>
-      <div style={{ fontSize: 26, color: "#475569" }}>
+      <div style={{ display: "flex", fontSize: 26, color: "#93a0a6" }}>
         by Isaac D&apos;Césares · dcesares.dev
       </div>
     </div>,
