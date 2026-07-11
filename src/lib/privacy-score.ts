@@ -1,16 +1,5 @@
 import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
-import type { BrowserDiagnostics, IPInfo } from "@/types";
-
-export type HeaderMeasurementStatus = "checking" | "measured" | "unavailable";
-
-export type BrowserDiagnosticsSnapshot = Omit<
-  BrowserDiagnostics,
-  "security"
-> & {
-  security: BrowserDiagnostics["security"] & {
-    responseHeadersStatus: HeaderMeasurementStatus;
-  };
-};
+import type { BrowserDiagnosticsSnapshot, IPInfo } from "@/types";
 
 export type DiagnosticFindingStatus =
   | "positive"

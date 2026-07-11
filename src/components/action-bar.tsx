@@ -5,6 +5,7 @@ import { m } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { buildTextReport, downloadFile, timestampName } from "@/lib/export";
+import { shareReport } from "@/lib/share";
 import type { BrowserDiagnostics, IPInfo } from "@/types";
 
 export function ActionBar({
@@ -38,50 +39,19 @@ export function ActionBar({
     toast.success("Exported text report.");
   };
 
-  const copyToClipboardWithFallback = async (
-    text: string,
-  ): Promise<boolean> => {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      const input = document.createElement("textarea");
-      input.value = text;
-      input.setAttribute("readonly", "");
-      input.style.position = "fixed";
-      input.style.opacity = "0";
-      document.body.appendChild(input);
-      input.select();
-      const copied = document.execCommand("copy");
-      document.body.removeChild(input);
-      return copied;
-    }
-  };
-
   const share = async () => {
     const shareText = `My IP: ${ip.ip} (${ip.ipVersion}) | Location: ${ip.location?.city ?? "Not available"}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "What's My IP",
-          text: shareText,
-          url: window.location.href,
-        });
-        return;
-      } catch {
-        // fallback to clipboard below
-      }
-    }
+    const outcome = await shareReport({
+      title: "What's My IP",
+      text: shareText,
+      url: window.location.href,
+    });
 
-    const copied = await copyToClipboardWithFallback(
-      `${shareText} | ${window.location.href}`,
-    );
-    if (copied) {
+    if (outcome === "copied") {
       toast.success("Share details copied to clipboard.");
-      return;
+    } else if (outcome === "failed") {
+      toast.error("Unable to share or copy automatically.");
     }
-
-    toast.error("Unable to share or copy automatically.");
   };
 
   return (

@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import type { HistoryEntry } from "@/types";
+import {
+  buildHistoryEntry,
+  detectAddressChange,
+  shouldRecord,
+  type AddressChange,
+} from "@/lib/history";
+import type { HistoryEntry, IPInfo } from "@/types";
 
 const KEY = "ip-history";
 const MAX_ITEMS = 10;
@@ -60,4 +66,33 @@ export function useHistory() {
   }, []);
 
   return { history, add, clear };
+}
+
+/**
+ * Owns the decision behind recording a Request observation into Local
+ * history: whether this address is new since the last one recorded, and
+ * whether it counts as a change worth reporting through onAddressChanged.
+ */
+export function useHistoryRecorder(
+  ipInfo: IPInfo | null,
+  add: (item: Omit<HistoryEntry, "id">) => void,
+  onAddressChanged?: (change: AddressChange) => void,
+) {
+  const lastRecordedIp = useRef<string | null>(null);
+  const onAddressChangedRef = useRef(onAddressChanged);
+
+  useEffect(() => {
+    onAddressChangedRef.current = onAddressChanged;
+  }, [onAddressChanged]);
+
+  useEffect(() => {
+    if (!ipInfo) return;
+    if (!shouldRecord(lastRecordedIp.current, ipInfo)) return;
+
+    const change = detectAddressChange(lastRecordedIp.current, ipInfo);
+    if (change) onAddressChangedRef.current?.(change);
+
+    add(buildHistoryEntry(ipInfo));
+    lastRecordedIp.current = ipInfo.ip;
+  }, [add, ipInfo]);
 }

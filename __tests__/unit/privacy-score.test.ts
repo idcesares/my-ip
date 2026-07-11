@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-  computeDiagnosticAssessment,
-  type BrowserDiagnosticsSnapshot,
-} from "@/lib/privacy-score";
+import { computeDiagnosticAssessment } from "@/lib/privacy-score";
 import { assessWebRTCExposure } from "@/lib/webrtc-diagnostics";
-import type { IPInfo, WebRTCLeakResult } from "@/types";
+import type {
+  BrowserDiagnosticsSnapshot,
+  IPInfo,
+  WebRTCLeakResult,
+} from "@/types";
 
 function makeIPInfo(overrides: Partial<IPInfo> = {}): IPInfo {
   return {

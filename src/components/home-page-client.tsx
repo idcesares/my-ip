@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { domAnimation, LazyMotion, m } from "framer-motion";
 import { Code2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBrowserDiagnostics } from "@/hooks/use-browser-diagnostics";
-import { useHistory } from "@/hooks/use-history";
+import { useHistory, useHistoryRecorder } from "@/hooks/use-history";
 import { useIPInfo } from "@/hooks/use-ip-info";
 import { useDiagnosticAssessment } from "@/hooks/use-privacy-score";
 import { useWebRTCLeak } from "@/hooks/use-webrtc-leak";
@@ -35,32 +35,12 @@ export function HomePageClient() {
     diagnostics,
     webrtc.assessment,
   );
-  const lastRecordedIp = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!ipInfo) return;
-    if (lastRecordedIp.current === ipInfo.ip) return;
-
-    if (lastRecordedIp.current !== null) {
-      toast.info("IP address changed", {
-        description: `${lastRecordedIp.current} → ${ipInfo.ip}`,
-      });
-    }
-
-    const location = ipInfo.location
-      ? [ipInfo.location.city, ipInfo.location.region, ipInfo.location.country]
-          .filter(Boolean)
-          .join(", ")
-      : null;
-
-    add({
-      ip: ipInfo.ip,
-      ipVersion: ipInfo.ipVersion,
-      timestamp: ipInfo.timestamp,
-      location,
+  useHistoryRecorder(ipInfo ?? null, add, (change) => {
+    toast.info("IP address changed", {
+      description: `${change.from} → ${change.to}`,
     });
-    lastRecordedIp.current = ipInfo.ip;
-  }, [add, ipInfo]);
+  });
 
   return (
     <LazyMotion features={domAnimation}>

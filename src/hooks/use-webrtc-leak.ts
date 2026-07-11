@@ -7,6 +7,11 @@ import {
   classifyCandidateAddress,
   parseCandidateLineAddress,
 } from "@/lib/webrtc-diagnostics";
+import {
+  resolvePeerConnectionFactory,
+  type MinimalPeerConnection,
+  type PeerConnectionFactory,
+} from "@/lib/webrtc-gatherer";
 import type {
   IPInfo,
   WebRTCCandidateObservation,
@@ -26,7 +31,16 @@ const INITIAL: WebRTCLeakResult = {
   error: null,
 };
 
-export function useWebRTCLeak(ip: IPInfo | null) {
+/**
+ * Pass an explicit factory (including null, to simulate an unsupported
+ * browser) to drive the cancel/timeout/dedup state machine from a test
+ * without a real RTCPeerConnection. Omit it in production to resolve the
+ * browser's real implementation lazily at scan time.
+ */
+export function useWebRTCLeak(
+  ip: IPInfo | null,
+  peerConnectionFactory?: PeerConnectionFactory | null,
+) {
   const [result, setResult] = useState<WebRTCLeakResult>(INITIAL);
   const [scanning, setScanning] = useState(false);
   const cancelActiveRef = useRef<(() => void) | null>(null);
@@ -37,12 +51,12 @@ export function useWebRTCLeak(ip: IPInfo | null) {
     if (typeof window === "undefined") return;
     cancelActiveRef.current?.();
 
-    const PeerConnection =
-      window.RTCPeerConnection ??
-      (window as unknown as Record<string, unknown>).webkitRTCPeerConnection ??
-      (window as unknown as Record<string, unknown>).mozRTCPeerConnection;
+    const factory =
+      peerConnectionFactory !== undefined
+        ? peerConnectionFactory
+        : resolvePeerConnectionFactory();
 
-    if (!PeerConnection) {
+    if (!factory) {
       setResult({
         ...INITIAL,
         completed: true,
@@ -57,7 +71,7 @@ export function useWebRTCLeak(ip: IPInfo | null) {
     let finished = false;
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    let pc: RTCPeerConnection | null = null;
+    let pc: MinimalPeerConnection | null = null;
 
     const finish = (timedOut: boolean, error: string | null = null) => {
       if (finished || cancelled) return;
@@ -81,9 +95,7 @@ export function useWebRTCLeak(ip: IPInfo | null) {
     };
 
     try {
-      pc = new (PeerConnection as typeof window.RTCPeerConnection)({
-        iceServers: [{ urls: STUN_SERVERS }],
-      });
+      pc = factory({ iceServers: [{ urls: STUN_SERVERS }] });
       pc.createDataChannel("");
       pc.onicecandidate = (event) => {
         const candidate = event.candidate;
@@ -116,7 +128,7 @@ export function useWebRTCLeak(ip: IPInfo | null) {
     } catch {
       finish(false, "The WebRTC candidate test could not start.");
     }
-  }, []);
+  }, [peerConnectionFactory]);
 
   const assessment = useMemo(
     () => assessWebRTCExposure(result, ip),

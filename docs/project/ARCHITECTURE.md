@@ -50,7 +50,7 @@ Outside Vercel, generic forwarding headers are reported as untrusted provenance.
 
 Pull requests run formatting, lint, strict TypeScript checks, coverage-enforced Vitest suites, the production build, and a production-server smoke test in `.github/workflows/ci.yml`. Vercel preview/production deployments should additionally verify WAF policy, canonical metadata, security headers, responsive rendering, and Lighthouse results.
 
-Critical measurement and assessment logic is isolated in `src/lib/browser-metrics.ts`, `src/lib/webrtc-diagnostics.ts`, and `src/lib/privacy-score.ts`. Hooks perform browser I/O; pure library functions own normalization and interpretation so they can be tested deterministically.
+Critical measurement and assessment logic is isolated in `src/lib/browser-metrics.ts`, `src/lib/webrtc-diagnostics.ts`, `src/lib/privacy-score.ts`, `src/lib/history.ts`, and `src/lib/share.ts`. Hooks perform browser I/O; pure library functions own normalization and interpretation so they can be tested deterministically. `src/lib/webrtc-gatherer.ts` wraps `RTCPeerConnection` behind a `PeerConnectionFactory` port so the Active test's cancel/timeout/dedup state machine in `use-webrtc-leak.ts` can be driven by a scripted adapter in tests instead of a real browser.
 
 ## Discoverability
 

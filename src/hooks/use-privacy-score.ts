@@ -3,11 +3,10 @@
 import { useMemo } from "react";
 import {
   computeDiagnosticAssessment,
-  type BrowserDiagnosticsSnapshot,
   type DiagnosticAssessment,
 } from "@/lib/privacy-score";
 import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
-import type { IPInfo } from "@/types";
+import type { BrowserDiagnosticsSnapshot, IPInfo } from "@/types";
 
 export function useDiagnosticAssessment(
   ip: IPInfo | null,
