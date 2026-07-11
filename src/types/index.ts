@@ -123,6 +123,17 @@ export interface BrowserDiagnostics {
   };
 }
 
+export type HeaderMeasurementStatus = "checking" | "measured" | "unavailable";
+
+export type BrowserDiagnosticsSnapshot = Omit<
+  BrowserDiagnostics,
+  "security"
+> & {
+  security: BrowserDiagnostics["security"] & {
+    responseHeadersStatus: HeaderMeasurementStatus;
+  };
+};
+
 export interface WebRTCLeakResult {
   supported: boolean;
   completed: boolean;

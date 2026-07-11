@@ -13,11 +13,14 @@ export default defineConfig({
       reporter: ["text", "json-summary"],
       include: [
         "src/lib/browser-metrics.ts",
+        "src/lib/history.ts",
         "src/lib/ip-detection.ts",
         "src/lib/ip-utils.ts",
         "src/lib/privacy-score.ts",
         "src/lib/schemas.ts",
+        "src/lib/share.ts",
         "src/lib/webrtc-diagnostics.ts",
+        "src/lib/webrtc-gatherer.ts",
       ],
       thresholds: {
         lines: 80,

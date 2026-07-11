@@ -6,8 +6,7 @@ import {
   countScriptVisibleCookies,
   normalizeDeviceMemory,
 } from "@/lib/browser-metrics";
-import type { BrowserDiagnostics } from "@/types";
-import type { BrowserDiagnosticsSnapshot } from "@/lib/privacy-score";
+import type { BrowserDiagnostics, BrowserDiagnosticsSnapshot } from "@/types";
 
 type NetworkInfo = {
   effectiveType?: string;

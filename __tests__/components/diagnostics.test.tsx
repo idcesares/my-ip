@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { InfoGrid } from "@/components/info-grid";
 import { WebRTCLeakCard } from "@/components/webrtc-leak-card";
-import type { BrowserDiagnosticsSnapshot } from "@/lib/privacy-score";
 import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
+import type { BrowserDiagnosticsSnapshot } from "@/types";
 
 function diagnostics(
   headerStatus: BrowserDiagnosticsSnapshot["security"]["responseHeadersStatus"] = "measured",
