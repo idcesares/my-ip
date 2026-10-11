@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Codebase Memory MCP
 .codebase-memory
+# playwright
+/test-results/
+/playwright-report/

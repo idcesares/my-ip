@@ -21,7 +21,7 @@ Privacy-first IP and browser diagnostics app built with Next.js App Router.
 - Next.js 16 + React 19 + TypeScript strict mode
 - Tailwind CSS 4 + custom shadcn-style UI primitives
 - SWR, Zod, Framer Motion, Lucide, Sonner
-- Vitest + Testing Library
+- Vitest + Testing Library; Playwright + axe-core for browser and accessibility checks
 
 ## Getting Started
 
@@ -54,8 +54,13 @@ npm run test
 npm run test:coverage
 npm run build
 npm run test:smoke
+npm run test:e2e
 npm run format
 ```
+
+## Browser tests
+
+`npm run test:e2e` serves the production build (run `npm run build` first) and checks the page in Chromium: console errors, overflow at 1280px and 390px, and axe-core WCAG 2 A/AA violations in light and dark mode. First run `npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to an existing Chromium binary.
 
 ## Docker
 
@@ -87,7 +92,7 @@ This repo is also an architecture showcase for a privacy-first diagnostics app.
 ### Deployment Checklist
 
 1. Set `NEXT_PUBLIC_APP_URL` to the production origin.
-2. Run quality gate: `npm run typecheck && npm run lint && npm run test:coverage && npm run build && npm run test:smoke && npm run format`.
+2. Run quality gate: `npm run typecheck && npm run lint && npm run test:coverage && npm run build && npm run test:smoke && npm run test:e2e && npm run format`.
 3. Verify generated SEO assets/routes:
    - `/robots.txt`
    - `/sitemap.xml`

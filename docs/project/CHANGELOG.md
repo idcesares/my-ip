@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Requesting location now sticks: periodic and manual refreshes keep asking for `include=geo` after the user opted in, instead of silently dropping the location after the next 60-second poll.
+- The address card now says "Not observed on this request" for the other address family instead of "Unavailable", since one request only proves the family it used.
+- The product name is now the page `<h1>`; the tagline is a paragraph.
+- Darkened the light-theme warning color so "need attention" text meets WCAG AA contrast (found by the new axe check).
+- Added Playwright browser checks (console errors, overflow at desktop/mobile, axe WCAG 2 A/AA in light and dark) as `npm run test:e2e`, run in CI.
 - CI now also runs on pushes to `master` (it was listening for `main`).
 - Local history tolerates unavailable or full `localStorage` (reads, writes, and clears no longer throw); history validation lives in `src/lib/schemas.ts` and is covered by tests, including the 10-entry cap.
 - Added `src/lib/site-url.ts`: canonical, sitemap, robots, and JSON-LD URLs come from `NEXT_PUBLIC_APP_URL` or Vercel's production hostname, and production builds fail instead of publishing `example.com`.

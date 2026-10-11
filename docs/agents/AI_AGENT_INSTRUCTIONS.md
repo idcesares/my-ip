@@ -49,6 +49,7 @@ npm run lint
 npm run test:coverage
 npm run build
 npm run test:smoke
+npm run test:e2e
 npm run format
 npm audit --audit-level=high
 ```
