@@ -60,7 +60,7 @@ Use the `my-ip-reference` knowledge-graph project for structural discovery.
 - Network Information API `effectiveType`, `downlink`, and `rtt` are rounded browser estimates, not a speed test or ICMP ping.
 - Page fetch duration is total same-origin HEAD-request duration, not pure network RTT.
 - `navigator.onLine` is a hint, not proof of internet reachability.
-- Hardware concurrency and device memory are browser-reported, privacy-reduced capability hints.
+- Hardware concurrency and device memory are shown exactly as the browser reports them (device memory is already rounded by the browser). They are displayed locally only; never send them anywhere, hash them, or combine them into an identifier.
 - Cookie count means script-visible `document.cookie` pairs; it excludes HttpOnly cookies.
 - Permission state is effective for this origin and can reflect user choice, browser behavior, and Permissions-Policy.
 - `crossOriginIsolated=false` is informational unless the product intentionally requires COOP/COEP.

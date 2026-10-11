@@ -1,3 +1,4 @@
+import { summarizeCsp, summarizeHsts } from "@/lib/security-headers";
 import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
 import type { BrowserDiagnosticsSnapshot, IPInfo } from "@/types";
 
@@ -75,6 +76,61 @@ function headerFinding(
       );
 }
 
+function cspFinding(
+  diagnostics: BrowserDiagnosticsSnapshot,
+): DiagnosticFinding {
+  const csp = diagnostics.security.responseHeaders.csp;
+  const base = headerFinding(
+    diagnostics,
+    "csp",
+    "Content Security Policy",
+    csp,
+  );
+  if (base.status !== "positive" || !csp) return base;
+
+  const summary = summarizeCsp(csp);
+  if (!summary.weak) return base;
+
+  // Presence alone is not protection: say what the policy actually permits.
+  return finding(
+    "csp",
+    "Content Security Policy",
+    "informational",
+    `Content Security Policy is present on the current page response, but ${summary.text.replace("Present · ", "")}.`,
+    "Same-origin page response",
+  );
+}
+
+function hstsFinding(
+  diagnostics: BrowserDiagnosticsSnapshot,
+): DiagnosticFinding {
+  const value = diagnostics.security.responseHeaders.strictTransportSecurity;
+  const base = headerFinding(
+    diagnostics,
+    "hsts",
+    "Strict Transport Security",
+    value,
+  );
+  if (base.status !== "positive" || !value) return base;
+
+  const summary = summarizeHsts(value);
+  return summary.weak
+    ? finding(
+        "hsts",
+        "Strict Transport Security",
+        "informational",
+        `Strict-Transport-Security is present but ineffective (${summary.text.replace("Present · ", "")}).`,
+        "Same-origin page response",
+      )
+    : finding(
+        "hsts",
+        "Strict Transport Security",
+        "positive",
+        `Strict-Transport-Security is present (${summary.text.replace("Present · ", "")}).`,
+        "Same-origin page response",
+      );
+}
+
 export function computeDiagnosticAssessment(
   ip: IPInfo | null,
   diagnostics: BrowserDiagnosticsSnapshot | null,
@@ -117,12 +173,8 @@ export function computeDiagnosticAssessment(
         : "The browser does not consider this page a secure context.",
       "Browser runtime",
     ),
-    headerFinding(
-      diagnostics,
-      "csp",
-      "Content Security Policy",
-      diagnostics.security.responseHeaders.csp,
-    ),
+    cspFinding(diagnostics),
+    hstsFinding(diagnostics),
     headerFinding(
       diagnostics,
       "permissions-policy",
@@ -157,6 +209,16 @@ export function computeDiagnosticAssessment(
         "webrtc",
         "WebRTC address exposure",
         "attention",
+        webrtc.summary,
+        "Active test",
+      ),
+    );
+  } else if (webrtc.status === "unobservable-family") {
+    findings.push(
+      finding(
+        "webrtc",
+        "WebRTC address exposure",
+        "informational",
         webrtc.summary,
         "Active test",
       ),

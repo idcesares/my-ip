@@ -54,6 +54,8 @@ function makeDiagnostics(
       saveData: null,
       changedAt: null,
       pageFetchMs: 20,
+      pageFetchMinMs: 20,
+      pageFetchSamples: 5,
     },
     preferences: {
       colorScheme: "dark",
@@ -62,13 +64,16 @@ function makeDiagnostics(
       touchCapable: false,
       maxTouchPoints: 0,
       cookieEnabled: true,
+      globalPrivacyControl: null,
     },
     capabilities: {
-      hardwareConcurrencyBucket: "5-8",
+      hardwareConcurrency: 8,
       deviceMemoryGB: 8,
       pdfViewerEnabled: true,
       secureContext: true,
       crossOriginIsolated: false,
+      localStorageAvailable: true,
+      userAgentData: null,
     },
     privacy: {
       scriptVisibleCookieCount: 0,
@@ -85,11 +90,13 @@ function makeDiagnostics(
         csp: "default-src 'self'",
         referrerPolicy: null,
         permissionsPolicy: "camera=()",
+        strictTransportSecurity: null,
         xFrameOptions: "DENY",
         xContentTypeOptions: "nosniff",
         cacheControl: "no-store",
       },
       responseHeadersStatus: headerStatus,
+      probedAt: "2026-07-11T00:00:00.000Z",
     },
   };
 }
@@ -184,5 +191,84 @@ describe("computeDiagnosticAssessment", () => {
     expect(result.findings.find((item) => item.id === "webrtc")?.status).toBe(
       "attention",
     );
+  });
+
+  describe("header strength", () => {
+    const finding = (
+      id: string,
+      mutate: (d: BrowserDiagnosticsSnapshot) => void,
+    ) => {
+      const diagnostics = makeDiagnostics();
+      mutate(diagnostics);
+      return computeDiagnosticAssessment(
+        makeIPInfo(),
+        diagnostics,
+        notRun,
+      )!.findings.find((item) => item.id === id)!;
+    };
+
+    it("does not call a CSP that allows inline scripts positive", () => {
+      const csp = finding("csp", (d) => {
+        d.security.responseHeaders.csp =
+          "default-src 'self'; script-src 'self' 'unsafe-inline'";
+      });
+      expect(csp.status).toBe("informational");
+      expect(csp.detail).toContain("allows inline scripts");
+    });
+
+    it("keeps a CSP that restricts scripts positive", () => {
+      const csp = finding("csp", (d) => {
+        d.security.responseHeaders.csp = "default-src 'self'";
+      });
+      expect(csp.status).toBe("positive");
+    });
+
+    it("reports a strong HSTS as positive and an ineffective one as informational", () => {
+      const strong = finding("hsts", (d) => {
+        d.security.responseHeaders.strictTransportSecurity =
+          "max-age=31536000; includeSubDomains";
+      });
+      expect(strong.status).toBe("positive");
+      expect(strong.detail).toContain("max-age 1 year");
+
+      const weak = finding("hsts", (d) => {
+        d.security.responseHeaders.strictTransportSecurity = "max-age=0";
+      });
+      expect(weak.status).toBe("informational");
+      expect(weak.detail).toContain("ineffective");
+    });
+
+    it("treats a missing HSTS header as informational and unmeasured as unavailable", () => {
+      expect(finding("hsts", () => {}).status).toBe("informational");
+      const checking = finding("hsts", (d) => {
+        d.security.responseHeadersStatus = "checking";
+      });
+      expect(checking.status).toBe("unavailable");
+    });
+  });
+
+  it("reports an IPv6 address WebRTC revealed on an IPv4-only host as informational", () => {
+    const result: WebRTCLeakResult = {
+      supported: true,
+      completed: true,
+      timedOut: false,
+      candidates: [
+        {
+          address: "2001:4860:4860::8888",
+          addressKind: "public",
+          candidateType: "srflx",
+          protocol: "udp",
+        },
+      ],
+      error: null,
+    };
+    const assessment = computeDiagnosticAssessment(
+      makeIPInfo(),
+      makeDiagnostics(),
+      assessWebRTCExposure(result, makeIPInfo()),
+    )!;
+    const webrtc = assessment.findings.find((item) => item.id === "webrtc")!;
+    expect(webrtc.status).toBe("informational");
+    expect(assessment.summary.attention).toBe(0);
   });
 });

@@ -1,11 +1,18 @@
-export function bucketLogicalProcessors(
+/** A finite, non-negative number, or null. Zero is a real value, not "missing". */
+export function finiteOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
+}
+
+export function normalizeHardwareConcurrency(
   threads: number | undefined,
-): string | null {
-  if (!Number.isFinite(threads) || !threads || threads < 1) return null;
-  if (threads <= 2) return "1–2";
-  if (threads <= 4) return "3–4";
-  if (threads <= 8) return "5–8";
-  return "9+";
+): number | null {
+  return typeof threads === "number" &&
+    Number.isInteger(threads) &&
+    threads >= 1
+    ? threads
+    : null;
 }
 
 export function normalizeDeviceMemory(
@@ -19,4 +26,13 @@ export function countScriptVisibleCookies(cookieHeader: string): number {
   return value
     ? value.split(";").filter((cookie) => cookie.trim().length > 0).length
     : 0;
+}
+
+export function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[middle]
+    : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
 }

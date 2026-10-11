@@ -21,7 +21,9 @@ Key diagnostic ownership:
 - `src/lib/webrtc-diagnostics.ts` parses, classifies, and compares candidates.
 - `src/lib/privacy-score.ts` produces descriptive findings.
 - `src/lib/ip-detection.ts` resolves trusted request provenance.
-- `src/lib/address-family.ts` words the missing-address-family text per host.
+- `src/lib/address-family.ts` words the missing-address-family text per host and says which families a host can observe.
+- `src/lib/browser-snapshot.ts` collects browser signals and runs the page/header probe; `src/lib/security-headers.ts` and `src/lib/permissions.ts` interpret header values and permission readings.
+- `src/components/diagnostics/` holds one component per diagnostic panel; `src/components/info-grid.tsx` composes them.
 - `src/lib/site-url.ts` resolves the canonical origin.
 - `src/app/api/ip/route.ts` owns public API representations.
 

@@ -49,6 +49,8 @@ function buildBrowser(
       saveData: false,
       changedAt: null,
       pageFetchMs: null,
+      pageFetchMinMs: null,
+      pageFetchSamples: 0,
     },
     preferences: {
       colorScheme: "dark",
@@ -57,13 +59,16 @@ function buildBrowser(
       touchCapable: false,
       maxTouchPoints: 0,
       cookieEnabled: true,
+      globalPrivacyControl: null,
     },
     capabilities: {
-      hardwareConcurrencyBucket: "8",
+      hardwareConcurrency: 8,
       deviceMemoryGB: 8,
       pdfViewerEnabled: true,
       secureContext: true,
       crossOriginIsolated: false,
+      localStorageAvailable: true,
+      userAgentData: null,
     },
     privacy: {
       scriptVisibleCookieCount: 0,
@@ -80,6 +85,7 @@ function buildBrowser(
         csp: null,
         referrerPolicy: null,
         permissionsPolicy: null,
+        strictTransportSecurity: null,
         xFrameOptions: null,
         xContentTypeOptions: null,
         cacheControl: null,
@@ -144,6 +150,8 @@ describe("buildTextReport", () => {
         saveData: null,
         changedAt: null,
         pageFetchMs: null,
+        pageFetchMinMs: null,
+        pageFetchSamples: 0,
       },
     });
     const report = buildTextReport(buildIP(), browser);
