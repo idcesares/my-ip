@@ -49,6 +49,55 @@ test.describe("home page", () => {
     ).toBeVisible();
   });
 
+  test("re-measures on demand and shows when it last ran", async ({ page }) => {
+    await openHome(page);
+    await expect(
+      page.getByText(/Page fetch and header checks last ran at/),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Re-measure" }).click();
+    await expect(
+      page.getByRole("button", { name: "Re-measure" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByText(/Page fetch and header checks last ran at/),
+    ).toBeVisible();
+  });
+
+  test("shows header strength, exact signals, and honest permission wording", async ({
+    page,
+  }) => {
+    await openHome(page);
+    await page.getByRole("button", { name: /show advanced signals/i }).click();
+
+    await expect(
+      page.getByText("Present · allows inline scripts"),
+    ).toBeVisible();
+    await expect(page.getByText(/Present · max-age 1 year/)).toBeVisible();
+    await expect(page.getByText(/ \(browser-reported\)$/)).toBeVisible();
+    await expect(page.getByText("User agent")).toBeVisible();
+    await expect(
+      page.getByText("Blocked by this site's policy").first(),
+    ).toBeVisible();
+    await expect(page.getByText("System scheme")).toBeVisible();
+  });
+
+  for (const viewport of VIEWPORTS) {
+    test(`has no horizontal overflow with advanced signals on ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await openHome(page);
+      await page
+        .getByRole("button", { name: /show advanced signals/i })
+        .click();
+      await expect(page.getByText("User agent")).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+
   for (const viewport of VIEWPORTS) {
     test(`has no horizontal overflow on ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize(viewport);
@@ -61,11 +110,15 @@ test.describe("home page", () => {
   }
 
   for (const scheme of ["light", "dark"] as const) {
-    test(`has no serious accessibility violations in ${scheme} mode`, async ({
+    test(`has no serious accessibility violations in ${scheme} mode (advanced signals open)`, async ({
       page,
     }) => {
       await page.emulateMedia({ colorScheme: scheme });
       await openHome(page);
+      await page
+        .getByRole("button", { name: /show advanced signals/i })
+        .click();
+      await expect(page.getByText("User agent")).toBeVisible();
       // Let entrance animations settle so contrast is measured on final colors.
       await page.waitForTimeout(1_000);
 

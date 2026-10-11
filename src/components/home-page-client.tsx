@@ -27,7 +27,11 @@ import { useWebRTCLeak } from "@/hooks/use-webrtc-leak";
 export function HomePageClient() {
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
   const { data: ipInfo, error, isLoading, mutate, fetchGeo } = useIPInfo();
-  const diagnostics = useBrowserDiagnostics(showAdvancedMetrics);
+  const {
+    data: diagnostics,
+    measuring,
+    remeasure,
+  } = useBrowserDiagnostics(showAdvancedMetrics);
   const { history, add, clear } = useHistory();
   const webrtc = useWebRTCLeak(ipInfo ?? null);
   const diagnosticAssessment = useDiagnosticAssessment(
@@ -35,6 +39,13 @@ export function HomePageClient() {
     diagnostics,
     webrtc.assessment,
   );
+
+  // Refresh re-reads the address and re-runs the page and header probes, so
+  // the measured values never go stale behind a fresh-looking address.
+  const refreshAll = () => {
+    void mutate();
+    remeasure();
+  };
 
   useHistoryRecorder(ipInfo ?? null, add, (change) => {
     toast.info("IP address changed", {
@@ -73,7 +84,7 @@ export function HomePageClient() {
               className="h-11 w-11"
               aria-label={isLoading ? "Refreshing data" : "Refresh data"}
               disabled={isLoading}
-              onClick={() => mutate()}
+              onClick={refreshAll}
             >
               <RefreshCw
                 className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
@@ -128,7 +139,7 @@ export function HomePageClient() {
               <ActionBar
                 ip={ipInfo}
                 browser={diagnostics}
-                onRefresh={() => mutate()}
+                onRefresh={refreshAll}
               />
             </>
           )}
@@ -137,6 +148,8 @@ export function HomePageClient() {
             data={diagnostics}
             showAdvanced={showAdvancedMetrics}
             onToggleAdvanced={() => setShowAdvancedMetrics((value) => !value)}
+            onRemeasure={remeasure}
+            measuring={measuring}
           />
 
           <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">

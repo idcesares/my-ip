@@ -24,8 +24,19 @@ export function describeMissingFamily(
   data: Pick<IPInfo, "provenance">,
   family: AddressFamily,
 ): string {
-  if (family === "IPv6" && IPV4_ONLY_PROVIDERS.has(data.provenance.provider)) {
-    return IPV6_NOT_SERVED;
-  }
-  return NOT_OBSERVED;
+  return canObserveFamily(data, family) ? NOT_OBSERVED : IPV6_NOT_SERVED;
+}
+
+/**
+ * Whether this deployment could ever see an address of the given family on an
+ * HTTP request. False means a comparison against the request address is
+ * meaningless for that family.
+ */
+export function canObserveFamily(
+  data: Pick<IPInfo, "provenance">,
+  family: AddressFamily,
+): boolean {
+  return !(
+    family === "IPv6" && IPV4_ONLY_PROVIDERS.has(data.provenance.provider)
+  );
 }

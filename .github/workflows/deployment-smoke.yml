@@ -1,10 +1,16 @@
 name: Deployment smoke
 
-# Runs against the URL Vercel just deployed. GitHub only runs deployment_status
-# workflows from the default branch, so this takes effect once merged to master.
-# Production only: previews sit behind Deployment Protection and would fail
-# without a bypass secret. To check previews too, add the repository secret
-# VERCEL_AUTOMATION_BYPASS_SECRET and widen the environment condition below.
+# Verifies the live site after Vercel reports a successful Production deploy.
+# GitHub only runs deployment_status workflows from the default branch.
+#
+# Vercel's environment_url is the deployment-specific *.vercel.app address,
+# which sits behind Deployment Protection, so by default this checks the public
+# production domain (override with the PRODUCTION_URL repository variable).
+# Right after a deploy the domain can still be serving the previous build for a
+# moment. To test the exact deployment instead, add the repository secret
+# VERCEL_AUTOMATION_BYPASS_SECRET (Protection Bypass for Automation); the
+# deployment URL is then used. Previews are not checked here.
+
 on:
   deployment_status:
 
@@ -33,6 +39,5 @@ jobs:
       - name: Verify the deployment
         run: node scripts/deployment-smoke.mjs
         env:
-          DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
-          # Optional: needed only for previews behind Deployment Protection.
+          DEPLOY_URL: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET != '' && github.event.deployment_status.environment_url || vars.PRODUCTION_URL || 'https://myip.dcesares.dev' }}
           VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}

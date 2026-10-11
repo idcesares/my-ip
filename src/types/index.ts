@@ -76,7 +76,10 @@ export interface BrowserDiagnostics {
     rtt: number | null;
     saveData: boolean | null;
     changedAt: string | null;
+    /** Median of the same-origin HEAD probe samples. */
     pageFetchMs: number | null;
+    pageFetchMinMs: number | null;
+    pageFetchSamples: number;
   };
   preferences: {
     colorScheme: "light" | "dark";
@@ -85,13 +88,22 @@ export interface BrowserDiagnostics {
     touchCapable: boolean;
     maxTouchPoints: number;
     cookieEnabled: boolean;
+    /** null when the browser does not expose Global Privacy Control. */
+    globalPrivacyControl: boolean | null;
   };
   capabilities: {
-    hardwareConcurrencyBucket: string | null;
+    hardwareConcurrency: number | null;
     deviceMemoryGB: number | null;
     pdfViewerEnabled: boolean | null;
     secureContext: boolean;
     crossOriginIsolated: boolean;
+    localStorageAvailable: boolean;
+    /** Low-entropy User-Agent Client Hints; null when unsupported. */
+    userAgentData: {
+      platform: string | null;
+      mobile: boolean | null;
+      brands: string[];
+    } | null;
   };
   privacy: {
     scriptVisibleCookieCount: number;
@@ -108,6 +120,7 @@ export interface BrowserDiagnostics {
       csp: string | null;
       referrerPolicy: string | null;
       permissionsPolicy: string | null;
+      strictTransportSecurity: string | null;
       xFrameOptions: string | null;
       xContentTypeOptions: string | null;
       cacheControl: string | null;
@@ -123,6 +136,8 @@ export type BrowserDiagnosticsSnapshot = Omit<
 > & {
   security: BrowserDiagnostics["security"] & {
     responseHeadersStatus: HeaderMeasurementStatus;
+    /** When the page probe last completed; null until the first run. */
+    probedAt: string | null;
   };
 };
 

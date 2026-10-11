@@ -34,8 +34,9 @@ Vercel overwrites `X-Forwarded-For` and does not forward external client IPs, ex
 
 - `scripts/deployment-smoke.mjs` checks a deployed URL: trusted `vercel` provenance with high confidence, no upstream-proxy warning, optional geolocation, `no-store` on the API, `405` on `POST`, the security headers on `/`, an `<h1>`, and `robots.txt`.
 - Run it by hand: `DEPLOY_URL=https://myip.dcesares.dev npm run test:deployment`.
-- `.github/workflows/deployment-smoke.yml` runs it after each successful **Production** deployment. GitHub only runs `deployment_status` workflows from the default branch, so it takes effect after it is merged to `master`.
-- Preview deployments sit behind Deployment Protection and redirect to Vercel's login, so the script fails on them unless `VERCEL_BYPASS_SECRET` (Protection Bypass for Automation) is set. To check previews in CI, add the repository secret `VERCEL_AUTOMATION_BYPASS_SECRET` and widen the environment condition in the workflow.
+- `.github/workflows/deployment-smoke.yml` runs it after each successful **Production** deployment. GitHub only runs `deployment_status` workflows from the default branch.
+- Vercel's `environment_url` for a deployment is its unique `*.vercel.app` address, which is behind Deployment Protection (it redirects to Vercel's login). The first version of the workflow used that URL and failed on its first production run for exactly that reason. The workflow now checks the public production domain (`https://myip.dcesares.dev`, overridable with the `PRODUCTION_URL` repository variable). Because the domain can briefly still serve the previous build right after a deploy, add the repository secret `VERCEL_AUTOMATION_BYPASS_SECRET` (Protection Bypass for Automation) to test the exact deployment URL instead.
+- Previews are not checked: they sit behind Deployment Protection and the script fails on them without `VERCEL_BYPASS_SECRET`.
 - Geolocation can legitimately be missing for some client IPs; the script reports that as a notice, not a failure.
 
 ## Not covered anywhere yet

@@ -93,7 +93,17 @@ describe("WebRTC exposure assessment", () => {
     expect(assessment.expectedPublicAddresses).toEqual(["8.8.8.8"]);
   });
 
-  it("flags a second public network identity", () => {
+  it("flags a second public network identity of the same family", () => {
+    const assessment = assessWebRTCExposure(
+      result([candidate("8.8.8.8", "public"), candidate("1.1.1.1", "public")]),
+      ipInfo(),
+    );
+    expect(assessment.status).toBe("additional-exposure");
+    expect(assessment.attention).toBe(true);
+    expect(assessment.additionalPublicAddresses).toEqual(["1.1.1.1"]);
+  });
+
+  it("does not flag a public IPv6 address on an IPv4-only host", () => {
     const assessment = assessWebRTCExposure(
       result([
         candidate("8.8.8.8", "public"),
@@ -101,8 +111,47 @@ describe("WebRTC exposure assessment", () => {
       ]),
       ipInfo(),
     );
+    expect(assessment.status).toBe("unobservable-family");
+    expect(assessment.attention).toBe(false);
+    expect(assessment.additionalPublicAddresses).toEqual([]);
+    expect(assessment.unobservableFamilyAddresses).toEqual([
+      "2001:4860:4860::8888",
+    ]);
+    expect(assessment.summary).toMatch(/cannot compare/);
+    expect(assessment.summary).toMatch(/not a leak by itself/);
+  });
+
+  it("still flags a mismatched public IPv6 address on a host that can observe IPv6", () => {
+    const assessment = assessWebRTCExposure(
+      result([candidate("2001:db8::1", "public")]),
+      ipInfo({
+        ip: "2001:db8::2",
+        ipVersion: "IPv6",
+        ipv4: null,
+        ipv6: "2001:db8::2",
+        provenance: {
+          provider: "cloudflare",
+          header: "cf-connecting-ip",
+          trusted: true,
+          forwarded: true,
+        },
+      }),
+    );
     expect(assessment.status).toBe("additional-exposure");
-    expect(assessment.additionalPublicAddresses).toEqual([
+    expect(assessment.additionalPublicAddresses).toEqual(["2001:db8::1"]);
+  });
+
+  it("still treats a mismatched IPv4 address as additional exposure alongside an unobservable IPv6 one", () => {
+    const assessment = assessWebRTCExposure(
+      result([
+        candidate("1.1.1.1", "public"),
+        candidate("2001:4860:4860::8888", "public"),
+      ]),
+      ipInfo(),
+    );
+    expect(assessment.status).toBe("additional-exposure");
+    expect(assessment.additionalPublicAddresses).toEqual(["1.1.1.1"]);
+    expect(assessment.unobservableFamilyAddresses).toEqual([
       "2001:4860:4860::8888",
     ]);
   });

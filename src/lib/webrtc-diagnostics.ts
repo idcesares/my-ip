@@ -1,4 +1,5 @@
 import ipaddr from "ipaddr.js";
+import { canObserveFamily } from "@/lib/address-family";
 import type {
   IPInfo,
   WebRTCCandidateObservation,
@@ -10,6 +11,7 @@ export type WebRTCAssessmentStatus =
   | "unavailable"
   | "none-observed"
   | "expected-address"
+  | "unobservable-family"
   | "additional-exposure";
 
 export interface WebRTCAssessment {
@@ -18,6 +20,8 @@ export interface WebRTCAssessment {
   summary: string;
   expectedPublicAddresses: string[];
   additionalPublicAddresses: string[];
+  /** Public addresses of a family this host can never observe on a request. */
+  unobservableFamilyAddresses: string[];
   privateAddresses: string[];
   maskedHostnames: string[];
   otherAddresses: string[];
@@ -69,6 +73,7 @@ export function assessWebRTCExposure(
   const empty = {
     expectedPublicAddresses: [],
     additionalPublicAddresses: [],
+    unobservableFamilyAddresses: [],
     privateAddresses: [],
     maskedHostnames: [],
     otherAddresses: [],
@@ -101,6 +106,7 @@ export function assessWebRTCExposure(
   );
   const expectedPublicAddresses = new Set<string>();
   const additionalPublicAddresses = new Set<string>();
+  const unobservableFamilyAddresses = new Set<string>();
   const privateAddresses = new Set<string>();
   const maskedHostnames = new Set<string>();
   const otherAddresses = new Set<string>();
@@ -108,10 +114,19 @@ export function assessWebRTCExposure(
   for (const candidate of result.candidates) {
     const address = canonicalizeCandidateAddress(candidate.address);
     if (candidate.addressKind === "public") {
-      (reachable.has(address)
-        ? expectedPublicAddresses
-        : additionalPublicAddresses
-      ).add(address);
+      const family =
+        ipaddr.isValid(address) && ipaddr.parse(address).kind() === "ipv6"
+          ? "IPv6"
+          : "IPv4";
+      if (reachable.has(address)) {
+        expectedPublicAddresses.add(address);
+      } else if (ip && !canObserveFamily(ip, family)) {
+        // The HTTP request could never have used this family, so a mismatch
+        // does not show the address is exposed beyond the request address.
+        unobservableFamilyAddresses.add(address);
+      } else {
+        additionalPublicAddresses.add(address);
+      }
     } else if (candidate.addressKind === "private") {
       privateAddresses.add(address);
     } else if (candidate.addressKind === "mdns") {
@@ -124,6 +139,7 @@ export function assessWebRTCExposure(
   const groups = {
     expectedPublicAddresses: [...expectedPublicAddresses],
     additionalPublicAddresses: [...additionalPublicAddresses],
+    unobservableFamilyAddresses: [...unobservableFamilyAddresses],
     privateAddresses: [...privateAddresses],
     maskedHostnames: [...maskedHostnames],
     otherAddresses: [...otherAddresses],
@@ -149,6 +165,16 @@ export function assessWebRTCExposure(
       status: "additional-exposure",
       attention: true,
       summary: `WebRTC exposed ${parts.join(" and ")} beyond the address used for this HTTP request.`,
+    };
+  }
+
+  if (unobservableFamilyAddresses.size > 0) {
+    const count = unobservableFamilyAddresses.size;
+    return {
+      ...groups,
+      status: "unobservable-family",
+      attention: false,
+      summary: `WebRTC revealed ${count} public IPv6 address${count === 1 ? "" : "es"} that this site cannot compare with your HTTP address, because it is served over IPv4 only. This is not a leak by itself; if a VPN should hide your IPv6 address, check that ${count === 1 ? "it matches" : "they match"} the address your VPN reports.`,
     };
   }
 

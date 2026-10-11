@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed the post-deployment smoke workflow: it targeted Vercel's deployment-specific URL, which is behind Deployment Protection, so its first production run failed with a redirect to Vercel's login. It now checks the public production domain, or the exact deployment URL when a bypass secret is configured.
+- Fixed: a real downlink or RTT of `0` was shown as "Unsupported", and an unbounded `downlinkMax` rendered as "Infinity Mbps". Zero is now shown as zero, non-finite values as "Not reported", and "Unsupported" only when the API is missing.
+- Fixed: the WebRTC test reported any public IPv6 address as "additional exposure" on the IPv4-only production host, where the HTTP request can never use IPv6. Such addresses are now informational ("IPv6 not comparable") and explain why no comparison is possible; same-family mismatches and literal private addresses are still flagged.
+- Page fetch is now the median of five HEAD requests with the minimum and sample count, instead of one noisy sample. Refresh and a new Re-measure button re-run it, and the panel shows when it last ran.
+- Security header rows now say what each header allows: CSP strength (inline scripts, eval, any-origin scripts), HSTS `max-age` and flags, disabled Permissions-Policy features, and verbatim X-Frame-Options, Referrer-Policy, X-Content-Type-Options, and Cache-Control. The CSP finding is informational, not positive, when the policy allows inline scripts; a new HSTS finding was added.
+- Geolocation, camera, and microphone read "Blocked by this site's policy" once the Permissions-Policy has been measured, instead of "Denied", because the site's own policy disables them regardless of the visitor's settings.
+- Added advanced signals: user agent, full language list, available screen, User-Agent Client Hints, Global Privacy Control, localStorage availability, and the app theme next to the system color scheme. Logical processors are now shown exactly rather than bucketed.
+- Split `info-grid.tsx` into per-panel components under `src/components/diagnostics/` and moved signal collection out of the hook into `src/lib/browser-snapshot.ts`.
+- Browser checks now cover the advanced view (overflow at desktop and mobile, axe in light and dark) and Re-measure.
 - The IPv6 row now says "Not observable: this site is served over IPv4 only" when served from Vercel, which has no IPv6 for custom domains, instead of implying another request might show one; other hosts keep "Not observed on this request".
 - When Cloudflare headers appear on a Vercel request, `/api/ip` lowers `confidence` to `low` and warns that the address may be a proxy's, since Vercel reports the connecting proxy.
 - Added `scripts/deployment-smoke.mjs` (`npm run test:deployment`) and a post-deployment workflow that verifies trusted Vercel provenance, geolocation, and edge headers on the live production URL.

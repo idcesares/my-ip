@@ -45,6 +45,7 @@ const STATUS_LABEL: Record<WebRTCAssessment["status"], string> = {
   unavailable: "Unavailable",
   "none-observed": "None observed",
   "expected-address": "Expected address only",
+  "unobservable-family": "IPv6 not comparable",
   "additional-exposure": "Additional exposure",
 };
 
@@ -118,6 +119,10 @@ export function WebRTCLeakCard({
             <AddressGroup
               label="Additional public addresses"
               addresses={assessment.additionalPublicAddresses}
+            />
+            <AddressGroup
+              label="Public IPv6 addresses (this site cannot compare)"
+              addresses={assessment.unobservableFamilyAddresses}
             />
             <AddressGroup
               label="Literal private addresses"
