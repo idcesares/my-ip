@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed the post-deployment smoke workflow: it targeted Vercel's deployment-specific URL, which is behind Deployment Protection, so its first production run failed with a redirect to Vercel's login. It now checks the public production domain, or the exact deployment URL when a bypass secret is configured.
 - Fixed: a real downlink or RTT of `0` was shown as "Unsupported", and an unbounded `downlinkMax` rendered as "Infinity Mbps". Zero is now shown as zero, non-finite values as "Not reported", and "Unsupported" only when the API is missing.
 - Fixed: the WebRTC test reported any public IPv6 address as "additional exposure" on the IPv4-only production host, where the HTTP request can never use IPv6. Such addresses are now informational ("IPv6 not comparable") and explain why no comparison is possible; same-family mismatches and literal private addresses are still flagged.
 - Page fetch is now the median of five HEAD requests with the minimum and sample count, instead of one noisy sample. Refresh and a new Re-measure button re-run it, and the panel shows when it last ran.
