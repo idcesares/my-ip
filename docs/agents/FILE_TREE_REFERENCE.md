@@ -33,7 +33,7 @@ __tests__/
 scripts/
   production-smoke.mjs  Built-server contract checks
 .github/workflows/ci.yml
-vitest.config.ts
+vitest.config.mts
 ```
 
 ## Documentation
