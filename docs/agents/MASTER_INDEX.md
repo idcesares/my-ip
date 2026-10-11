@@ -33,4 +33,4 @@ Supporting references:
 
 ## Required handoff
 
-Run `npm run typecheck`, `npm run lint`, `npm run test:coverage`, `npm run build`, `npm run test:smoke`, `npm run format`, and `npm audit --audit-level=high`. Update the relevant files in `docs/project/` for every user-visible or operational change.
+Run `npm run typecheck`, `npm run lint`, `npm run test:coverage`, `npm run build`, `npm run test:smoke`, `npm run test:e2e`, `npm run format`, and `npm audit --audit-level=high`. Update the relevant files in `docs/project/` for every user-visible or operational change.

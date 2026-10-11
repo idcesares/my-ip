@@ -68,7 +68,7 @@ Production abuse protection belongs in Vercel WAF. Local development does not em
 ## Detection notes
 
 - The result is the address used for this HTTP connection. VPNs, relays, corporate proxies, and Tor can change it.
-- A single request arrives over either IPv4 or IPv6; it cannot prove that both address families are available.
-- `confidence` describes the request metadata source, not ownership of the address.
+- A single request arrives over either IPv4 or IPv6; it cannot prove that both address families are available. The production host is IPv4-only, so `ipv6` is `null` there (see `OPERATIONS.md`).
+- `confidence` describes the request metadata source, not ownership of the address. On Vercel it drops to `low`, with a warning, when Cloudflare headers show another proxy sits in front (Vercel would then report the proxy's address).
 - `provenance` reports how the request address was observed and whether that source is trusted in the current deployment mode.
 - On Vercel, `@vercel/functions` resolves the platform-managed `x-real-ip` value. Outside Vercel, `cf-connecting-ip` is trusted only when `TRUSTED_PROXY_MODE=cloudflare` is explicitly enabled.

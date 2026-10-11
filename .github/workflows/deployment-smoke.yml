@@ -1,0 +1,38 @@
+name: Deployment smoke
+
+# Runs against the URL Vercel just deployed. GitHub only runs deployment_status
+# workflows from the default branch, so this takes effect once merged to master.
+# Production only: previews sit behind Deployment Protection and would fail
+# without a bypass secret. To check previews too, add the repository secret
+# VERCEL_AUTOMATION_BYPASS_SECRET and widen the environment condition below.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment_url != '' &&
+      startsWith(github.event.deployment_status.environment, 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the deployed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify the deployment
+        run: node scripts/deployment-smoke.mjs
+        env:
+          DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
+          # Optional: needed only for previews behind Deployment Protection.
+          VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}

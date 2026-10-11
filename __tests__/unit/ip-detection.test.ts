@@ -132,4 +132,43 @@ describe("IP detection", () => {
 
     expect(result.location).toBeNull();
   });
+
+  describe("upstream proxy guard on Vercel", () => {
+    it("lowers confidence and warns when Cloudflare headers are present", async () => {
+      vi.stubEnv("VERCEL", "1");
+      const proxyHeaders: Record<string, string>[] = [
+        { "cf-connecting-ip": "1.1.1.1" },
+        { "cf-ray": "8a1b2c3d4e5f-AMS" },
+        { "cdn-loop": "cloudflare; loops=1" },
+      ];
+      for (const headers of proxyHeaders) {
+        const result = await detectIP(
+          request({ "x-real-ip": "172.70.1.1", ...headers }),
+        );
+
+        expect(result.ip).toBe("172.70.1.1");
+        expect(result.confidence).toBe("low");
+        expect(result.warnings.join(" ")).toMatch(/Cloudflare edge IP/);
+      }
+    });
+
+    it("keeps high confidence without Cloudflare headers", async () => {
+      vi.stubEnv("VERCEL", "1");
+      const result = await detectIP(request({ "x-real-ip": "8.8.8.8" }));
+
+      expect(result.confidence).toBe("high");
+      expect(result.warnings.join(" ")).not.toMatch(/Cloudflare/);
+    });
+
+    it("does not apply in explicit Cloudflare trusted-proxy mode", async () => {
+      vi.stubEnv("VERCEL", "");
+      vi.stubEnv("TRUSTED_PROXY_MODE", "cloudflare");
+      const result = await detectIP(
+        request({ "cf-connecting-ip": "8.8.8.8", "cf-ray": "abc" }),
+      );
+
+      expect(result.confidence).toBe("high");
+      expect(result.warnings.join(" ")).not.toMatch(/Cloudflare edge IP/);
+    });
+  });
 });

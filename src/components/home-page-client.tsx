@@ -56,9 +56,9 @@ export function HomePageClient() {
         >
           <div className="flex min-w-0 items-center gap-3">
             <LogoMark />
-            <span className="truncate font-mono text-xs font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+            <h1 className="truncate font-mono text-xs font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
               What&apos;s My IP — Network Diagnostics
-            </span>
+            </h1>
           </div>
 
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -88,10 +88,10 @@ export function HomePageClient() {
             <span className="eyebrow-dot" aria-hidden="true" /> Live · No
             tracking · No analytics
           </p>
-          <h1 className="max-w-2xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] md:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] md:text-base">
             Instant IP visibility with browser-reported network, security, and
             privacy signals for this connection.
-          </h1>
+          </p>
         </div>
 
         <section className="space-y-6" aria-busy={isLoading}>
