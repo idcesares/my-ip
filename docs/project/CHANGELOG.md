@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fixed the theme toggle: the sun/moon icon followed the operating-system setting instead of the page theme (Tailwind 4 applies `dark:` by `prefers-color-scheme`), so it showed the wrong icon after choosing a theme that differed from the OS, and with a dark OS the first click did nothing because the code compared the "system" setting rather than the resolved theme. Added a `dark` custom variant that follows the `.dark` class, used the resolved theme, and added browser tests for both OS settings (they fail on the old code).
+- Removed the unused `tailwind.config.ts` (Tailwind 4 does not load it; the built CSS is byte-identical without it), the unused `tailwindcss-animate` dev dependency, and the unused Next.js starter SVGs in `public/`.
+- Added Dependabot (npm grouped weekly, GitHub Actions, Docker; ESLint and TypeScript majors held back) and pinned the GitHub Actions in the workflows to commit SHAs.
+- Removed dead ISP/ASN rendering from the address card; the `isp` API field remains, always `null`, and is documented as such.
+- Agent docs no longer refer to a knowledge graph file or an `apply_patch` tool that are not part of the repository.
 - Fixed the post-deployment smoke workflow: it targeted Vercel's deployment-specific URL, which is behind Deployment Protection, so its first production run failed with a redirect to Vercel's login. It now checks the public production domain, or the exact deployment URL when a bypass secret is configured.
 - Fixed: a real downlink or RTT of `0` was shown as "Unsupported", and an unbounded `downlinkMax` rendered as "Infinity Mbps". Zero is now shown as zero, non-finite values as "Not reported", and "Unsupported" only when the API is missing.
 - Fixed: the WebRTC test reported any public IPv6 address as "additional exposure" on the IPv4-only production host, where the HTTP request can never use IPv6. Such addresses are now informational ("IPv6 not comparable") and explain why no comparison is possible; same-family mismatches and literal private addresses are still flagged.

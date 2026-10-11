@@ -14,7 +14,7 @@
       "actions": [
         "read-agent-rules",
         "inspect-git-status",
-        "query-code-graph",
+        "query-code-graph-if-available",
         "read-relevant-tests-and-docs"
       ]
     },

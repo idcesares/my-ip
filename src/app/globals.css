@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Tailwind 4 applies dark: utilities by OS preference unless told otherwise.
+   The app's theme is the .dark class set by next-themes, so follow that. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: 100 12% 94%;
   --foreground: 205 22% 10%;

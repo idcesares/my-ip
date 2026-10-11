@@ -54,7 +54,7 @@ npm run format
 npm audit --audit-level=high
 ```
 
-The coverage configuration protects critical pure logic. Do not weaken thresholds to make a change pass. After structural edits, refresh the codebase knowledge graph for project `my-ip-reference`.
+The coverage configuration protects critical pure logic. Do not weaken thresholds to make a change pass. If you use a code graph for project `my-ip-reference`, refresh it after structural edits; it is not stored in this repository.
 
 ## Deployment boundary
 

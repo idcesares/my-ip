@@ -22,20 +22,12 @@ Do not implement historical snippets from agent docs when they disagree with run
 - Production smoke harness: `scripts/production-smoke.mjs`
 - Runtime documentation: `docs/project/`
 - Agent documentation: `docs/agents/`
-- Persisted knowledge graph: `.codebase-memory/graph.db.zst`
 
 There is intentionally no request middleware and no in-process production rate limiter. Static security headers live in `next.config.ts`; Vercel WAF owns distributed abuse protection.
 
-## Codebase-memory workflow
+## Code discovery
 
-Use the `my-ip-reference` knowledge-graph project for structural discovery.
-
-1. `search_graph` for functions, modules, routes, or types.
-2. `trace_path` for callers, callees, and impact analysis.
-3. `get_code_snippet` after resolving an exact qualified name.
-4. `query_graph` for complex relationships or quality analysis.
-5. Fall back to `rg` for literals, configuration, documentation, or insufficient graph results.
-6. Re-index with full persistence after structural changes.
+Start with `rg` and direct file reads; the codebase is small enough for that. If your environment provides a codebase-memory MCP project named `my-ip-reference`, it can speed up structural questions (`search_graph`, `trace_path`, `get_code_snippet`, `query_graph`), but the graph is not stored in this repository and may be absent or stale, so confirm anything it tells you against the code.
 
 ## Architecture invariants
 
@@ -72,7 +64,7 @@ Use the `my-ip-reference` knowledge-graph project for structural discovery.
 - Preserve 320px/390px layouts, keyboard navigation, 44px primary targets, reduced-motion behavior, and explicit loading/error states.
 - Add or update tests with every behavioral change.
 - Update user-facing documentation in the same change.
-- Use `apply_patch` for manual file edits and preserve unrelated worktree changes.
+- Keep manual edits minimal and preserve unrelated worktree changes.
 
 ## Required validation
 
