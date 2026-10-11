@@ -36,6 +36,8 @@ flowchart TD
 
 There is intentionally no process-local production rate limiter: function instances and regions do not share memory, so an in-process counter would provide misleading protection.
 
+Vercel-specific hosting facts (IPv4-only host, WAF runbook, proxy caveat, deployed-URL checks) are in `OPERATIONS.md`.
+
 Outside Vercel, generic forwarding headers are reported as untrusted provenance. A self-hosted deployment may opt into `TRUSTED_PROXY_MODE=cloudflare` only when Cloudflare is the exclusive ingress.
 
 ## Privacy properties

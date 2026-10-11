@@ -5,11 +5,8 @@ import { m, useReducedMotion } from "framer-motion";
 import { AlertTriangle, MapPin, ShieldAlert } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
+import { describeMissingFamily } from "@/lib/address-family";
 import type { IPInfo } from "@/types";
-
-// One HTTP request only reveals the address family it used, so a missing
-// family means "not seen on this request", not "not supported".
-const NOT_OBSERVED = "Not observed on this request";
 
 interface IPAddressCardProps {
   data: IPInfo;
@@ -77,7 +74,7 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
           </p>
           <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[hsl(var(--border))] pb-2">
             <code className="min-w-0 flex-1 break-all font-mono text-sm [font-variant-numeric:tabular-nums] md:text-base">
-              {data.ipv4 ?? NOT_OBSERVED}
+              {data.ipv4 ?? describeMissingFamily(data, "IPv4")}
             </code>
             <CopyButton value={data.ipv4} label="IPv4" />
           </div>
@@ -88,7 +85,7 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
           </p>
           <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[hsl(var(--border))] pb-2">
             <code className="min-w-0 flex-1 break-all font-mono text-sm [font-variant-numeric:tabular-nums] md:text-base">
-              {data.ipv6 ?? NOT_OBSERVED}
+              {data.ipv6 ?? describeMissingFamily(data, "IPv6")}
             </code>
             <CopyButton value={data.ipv6} label="IPv6" />
           </div>

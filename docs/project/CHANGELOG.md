@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The IPv6 row now says "Not observable: this site is served over IPv4 only" when served from Vercel, which has no IPv6 for custom domains, instead of implying another request might show one; other hosts keep "Not observed on this request".
+- When Cloudflare headers appear on a Vercel request, `/api/ip` lowers `confidence` to `low` and warns that the address may be a proxy's, since Vercel reports the connecting proxy.
+- Added `scripts/deployment-smoke.mjs` (`npm run test:deployment`) and a post-deployment workflow that verifies trusted Vercel provenance, geolocation, and edge headers on the live production URL.
+- Added `docs/project/OPERATIONS.md`: hosting facts, WAF rate-limit runbook and current status, proxy caveat, and deployment verification.
+- Icon, Apple icon, Open Graph, and Twitter image routes no longer opt into the edge runtime, so they are prerendered as static files at build time.
 - Requesting location now sticks: periodic and manual refreshes keep asking for `include=geo` after the user opted in, instead of silently dropping the location after the next 60-second poll.
 - The address card now says "Not observed on this request" for the other address family instead of "Unavailable", since one request only proves the family it used.
 - The product name is now the page `<h1>`; the tagline is a paragraph.

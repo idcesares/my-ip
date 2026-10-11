@@ -29,20 +29,37 @@ function ipInfo(overrides: Partial<IPInfo> = {}): IPInfo {
 }
 
 describe("IPAddressCard", () => {
-  it("describes the other address family as not observed, not unavailable", () => {
+  it("says IPv6 is not observable on the IPv4-only Vercel host", () => {
     render(<IPAddressCard data={ipInfo()} />);
+    expect(
+      screen.getByText("Not observable: this site is served over IPv4 only"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Unavailable")).not.toBeInTheDocument();
+  });
+
+  it("describes a missing family as not observed on other hosts", () => {
+    render(
+      <IPAddressCard
+        data={ipInfo({
+          provenance: {
+            provider: "standard-forwarded",
+            header: "x-real-ip",
+            trusted: false,
+            forwarded: true,
+          },
+        })}
+      />,
+    );
     expect(
       screen.getByText("Not observed on this request"),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Unavailable")).not.toBeInTheDocument();
+    expect(screen.queryByText(/served over IPv4 only/)).not.toBeInTheDocument();
   });
 
   it("shows both families when each is present", () => {
     render(<IPAddressCard data={ipInfo({ ipv6: "2001:db8::1" })} />);
     expect(screen.getByText("2001:db8::1")).toBeInTheDocument();
-    expect(
-      screen.queryByText("Not observed on this request"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Not observ/)).not.toBeInTheDocument();
   });
 
   it("requests location on demand and shows the loading state", async () => {

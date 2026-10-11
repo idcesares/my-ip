@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const alt = "What's My IP? by Isaac D'Césares";
 export const size = {
   width: 1200,

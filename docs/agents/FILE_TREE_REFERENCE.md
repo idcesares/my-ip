@@ -21,6 +21,8 @@ Key diagnostic ownership:
 - `src/lib/webrtc-diagnostics.ts` parses, classifies, and compares candidates.
 - `src/lib/privacy-score.ts` produces descriptive findings.
 - `src/lib/ip-detection.ts` resolves trusted request provenance.
+- `src/lib/address-family.ts` words the missing-address-family text per host.
+- `src/lib/site-url.ts` resolves the canonical origin.
 - `src/app/api/ip/route.ts` owns public API representations.
 
 ## Verification
@@ -32,7 +34,9 @@ __tests__/
   integration/          API route behavior
 scripts/
   production-smoke.mjs  Built-server contract checks
+  deployment-smoke.mjs  Live-URL checks for Vercel provenance, geo, and headers
 .github/workflows/ci.yml
+.github/workflows/deployment-smoke.yml
 vitest.config.mts
 ```
 

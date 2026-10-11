@@ -55,6 +55,21 @@ function pickFromList(value: string | null): string | null {
 }
 
 /**
+ * Vercel overwrites X-Forwarded-For and does not forward external client IPs,
+ * so behind another proxy its value is that proxy's address. Cloudflare marks
+ * its requests with these headers; seeing them on Vercel means the reported
+ * address is probably a Cloudflare edge IP. A client can inject the headers,
+ * but that only lowers confidence in its own response and never changes the IP.
+ */
+function hasCloudflareProxyHeaders(request: Request): boolean {
+  return (
+    request.headers.has("cf-connecting-ip") ||
+    request.headers.has("cf-ray") ||
+    /cloudflare/i.test(request.headers.get("cdn-loop") ?? "")
+  );
+}
+
+/**
  * Observe the request through one deployment-aware seam. Vercel's helper is
  * authoritative in production because the platform overwrites its client-IP
  * header. Other proxy headers are deliberately lower-trust fallbacks.
@@ -230,6 +245,14 @@ export async function detectIP(
       "IP came from an untrusted forwarding header and may be client-controlled.",
     );
   }
+  const behindUpstreamProxy =
+    candidate.provenance.provider === "vercel" &&
+    hasCloudflareProxyHeaders(request);
+  if (behindUpstreamProxy) {
+    warnings.push(
+      "Cloudflare headers were present; Vercel reports the connecting proxy's address, so this may be a Cloudflare edge IP rather than the client's.",
+    );
+  }
   if (candidate.source === "fallback" || ipVersion === "Unknown") {
     warnings.push(
       "Unable to determine a reliable public IP from request headers.",
@@ -254,7 +277,8 @@ export async function detectIP(
     ipv6: ipVersion === "IPv6" ? candidate.ip : null,
     isPublic: category === "Public",
     source: candidate.source,
-    confidence: candidate.provenance.trusted ? "high" : "low",
+    confidence:
+      candidate.provenance.trusted && !behindUpstreamProxy ? "high" : "low",
     provenance: candidate.provenance,
     category,
     timestamp: new Date().toISOString(),

@@ -5,7 +5,7 @@ Privacy-first IP and browser diagnostics app built with Next.js App Router.
 ## Features
 
 - Deployment-aware IP detection with explicit provenance and trusted Vercel request metadata.
-- IPv4/IPv6 breakdown, category detection (public/private/CGNAT/etc).
+- IPv4/IPv6 classification and category detection (public/private/CGNAT/etc). The production host is IPv4-only (Vercel does not serve IPv6 for custom domains), so IPv6 is reported as not observable there; see `docs/project/OPERATIONS.md`.
 - Detection confidence and factual request provenance.
 - Browser and network signals collected locally with estimate/support-state labels.
 - Permission-state, secure-context, and security-header visibility (same-origin).
@@ -88,6 +88,7 @@ This repo is also an architecture showcase for a privacy-first diagnostics app.
 - Privacy model: `docs/project/PRIVACY.md`
 - Diagnostic metric semantics: `docs/project/DIAGNOSTICS.md`
 - Contributor workflow: `docs/project/CONTRIBUTING.md`
+- Vercel operations, WAF runbook, and deployment checks: `docs/project/OPERATIONS.md`
 
 ### Deployment Checklist
 
@@ -98,8 +99,8 @@ This repo is also an architecture showcase for a privacy-first diagnostics app.
    - `/sitemap.xml`
    - `/opengraph-image`
    - `/twitter-image`
-4. Configure abuse protection and request limits in Vercel WAF. The application does not rely on process-local counters, which are not durable across functions or regions.
-5. Deploy and re-run Lighthouse (mobile + desktop) on the production URL.
+4. Configure abuse protection and request limits in Vercel WAF (suggested rule and status in `docs/project/OPERATIONS.md`). The application does not rely on process-local counters, which are not durable across functions or regions.
+5. Deploy, run `DEPLOY_URL=<production origin> npm run test:deployment`, and re-run Lighthouse (mobile + desktop) on the production URL.
 6. Confirm canonical and OG/Twitter previews resolve to the production domain.
 7. Verify the production WebRTC test and browser signals in at least one Chromium and one non-Chromium browser; unsupported values must remain labeled as such.
 
