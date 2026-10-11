@@ -53,6 +53,8 @@ Example JSON response:
 }
 ```
 
+`isp` is always `null`. It is kept so existing consumers keep working, but the application performs no ISP or ASN enrichment and has no plan to.
+
 Location fields are optional. On Vercel they are derived from platform request metadata through `@vercel/functions`; the application does not call a third-party IP-geolocation provider.
 ISP and ASN fields are not enriched and remain `null`.
 

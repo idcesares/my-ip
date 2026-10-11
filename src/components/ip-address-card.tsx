@@ -108,22 +108,6 @@ export function IPAddressCard({ data, onFetchGeo }: IPAddressCardProps) {
               </span>
             </p>
           )}
-          {data.isp?.name && (
-            <p className="text-[hsl(var(--muted-foreground))]">
-              ISP:{" "}
-              <span className="font-medium text-[hsl(var(--foreground))]">
-                {data.isp.name}
-              </span>
-            </p>
-          )}
-          {data.isp?.asn && (
-            <p className="text-[hsl(var(--muted-foreground))]">
-              ASN:{" "}
-              <span className="font-medium text-[hsl(var(--foreground))]">
-                {data.isp.asn}
-              </span>
-            </p>
-          )}
         </div>
       ) : onFetchGeo ? (
         <Button

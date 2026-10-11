@@ -81,6 +81,44 @@ test.describe("home page", () => {
     await expect(page.getByText("System scheme")).toBeVisible();
   });
 
+  for (const os of ["light", "dark"] as const) {
+    test(`theme toggle flips on the first click and shows the matching icon (OS ${os})`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme: os });
+      await openHome(page);
+
+      const html = page.locator("html");
+      const iconWidth = (selector: string) => () =>
+        page
+          .locator(selector)
+          .evaluate((icon) => Math.round(icon.getBoundingClientRect().width));
+      const darkClass = /(^|\s)dark(\s|$)/;
+      const startsDark = os === "dark";
+
+      if (startsDark) await expect(html).toHaveClass(darkClass);
+      else await expect(html).not.toHaveClass(darkClass);
+
+      await page
+        .getByRole("button", { name: "Toggle theme", exact: true })
+        .click();
+
+      // Sun is shown while the page is light, moon while it is dark.
+      const nowDark = !startsDark;
+      if (nowDark) await expect(html).toHaveClass(darkClass);
+      else await expect(html).not.toHaveClass(darkClass);
+      const moon = iconWidth(".lucide-moon-star");
+      const sun = iconWidth(".lucide-sun-medium");
+      if (nowDark) {
+        await expect.poll(moon).toBeGreaterThan(0);
+        await expect.poll(sun).toBe(0);
+      } else {
+        await expect.poll(sun).toBeGreaterThan(0);
+        await expect.poll(moon).toBe(0);
+      }
+    });
+  }
+
   for (const viewport of VIEWPORTS) {
     test(`has no horizontal overflow with advanced signals on ${viewport.name}`, async ({
       page,

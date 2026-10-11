@@ -25,4 +25,4 @@ npm run format
 npm audit --audit-level=high
 ```
 
-Runtime code and tests take precedence over documentation. Keep `README.md`, `docs/project/`, agent guidance, and the `my-ip-reference` knowledge graph synchronized with user-visible or architectural changes.
+Runtime code and tests take precedence over documentation. Keep `README.md`, `docs/project/`, and agent guidance synchronized with user-visible or architectural changes. If you use a `my-ip-reference` code graph, refresh it after structural edits.
