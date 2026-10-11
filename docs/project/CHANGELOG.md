@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- CI now also runs on pushes to `master` (it was listening for `main`).
+- Local history tolerates unavailable or full `localStorage` (reads, writes, and clears no longer throw); history validation lives in `src/lib/schemas.ts` and is covered by tests, including the 10-entry cap.
+- Added `src/lib/site-url.ts`: canonical, sitemap, robots, and JSON-LD URLs come from `NEXT_PUBLIC_APP_URL` or Vercel's production hostname, and production builds fail instead of publishing `example.com`.
+- Dockerfile now uses Node 24, runs as the `node` user, builds with `NEXT_PUBLIC_APP_URL`, and has a healthcheck; added `.dockerignore`, `.env.example`, `.nvmrc`, and an `engines` field.
+- Removed unused `geoSchema` and `isValidIP`.
 - Major dependency updates: React 19.3, TypeScript 6.0, Vitest 5, `@vitejs/plugin-react` 6 (Vite 8), jsdom 30, jest-dom 7 (now imported from `@testing-library/jest-dom/vitest`), `lucide-react` 1.x, framer-motion 14, and `@types/node` 22. CI now runs Node 24; `vitest.config.ts` became `vitest.config.mts`. Held back: ESLint 10 (`eslint-config-next` plugins do not yet declare support) and TypeScript 7 (`typescript-eslint` does not support it yet).
 - Updated dependencies within semver ranges (Next.js 16.4, Tailwind 4.3, Vitest 4.1.11, Radix, SWR, ipaddr.js, and others), resolving the critical Next.js advisory and the high-severity `postcss`, `undici`, `sharp`, and `nanoid` findings; raised the `postcss` override to 8.5.29. Only the dev-only `braces` chain under `eslint-config-next` remains (see `AGENTS.md`).
 - Removed Vercel Analytics so runtime behavior matches the no-analytics privacy contract.

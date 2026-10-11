@@ -5,31 +5,10 @@ import {
   isCGNAT,
   isPrivateIP,
   isPublicIP,
-  isValidIP,
   stripPort,
 } from "@/lib/ip-utils";
 
 describe("ip-utils", () => {
-  describe("isValidIP", () => {
-    it("validates IPv4 addresses", () => {
-      expect(isValidIP("8.8.8.8")).toBe(true);
-      expect(isValidIP("192.168.1.1")).toBe(true);
-      expect(isValidIP("0.0.0.0")).toBe(true);
-    });
-
-    it("validates IPv6 addresses", () => {
-      expect(isValidIP("2001:db8::1")).toBe(true);
-      expect(isValidIP("::1")).toBe(true);
-      expect(isValidIP("fe80::1")).toBe(true);
-    });
-
-    it("rejects invalid strings", () => {
-      expect(isValidIP("not-an-ip")).toBe(false);
-      expect(isValidIP("999.999.999.999")).toBe(false);
-      expect(isValidIP("")).toBe(false);
-    });
-  });
-
   describe("detectIPVersion", () => {
     it("detects IPv4", () => {
       expect(detectIPVersion("1.1.1.1")).toBe("IPv4");

@@ -1,38 +1,56 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { z } from "zod";
 import {
   buildHistoryEntry,
   detectAddressChange,
   shouldRecord,
   type AddressChange,
 } from "@/lib/history";
+import { historyArraySchema } from "@/lib/schemas";
 import type { HistoryEntry, IPInfo } from "@/types";
 
 const KEY = "ip-history";
 const MAX_ITEMS = 10;
 
-const historyEntrySchema = z.object({
-  id: z.string(),
-  ip: z.string(),
-  ipVersion: z.string(),
-  timestamp: z.string(),
-  location: z.string().nullable().optional(),
-});
+/**
+ * Storage can be unavailable (blocked site data, private modes) or full, and
+ * history is a convenience, so every access degrades to "no history".
+ */
+function storageGet(): string | null {
+  try {
+    return localStorage.getItem(KEY);
+  } catch {
+    return null;
+  }
+}
 
-const historyArraySchema = z.array(historyEntrySchema);
+function storageSet(value: string): void {
+  try {
+    localStorage.setItem(KEY, value);
+  } catch {
+    // Quota or blocked storage: keep the in-memory history only.
+  }
+}
+
+function storageRemove(): void {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // Nothing to clean up when storage is unavailable.
+  }
+}
 
 function readInitialHistory(): HistoryEntry[] {
   if (typeof window === "undefined") return [];
-  const raw = localStorage.getItem(KEY);
+  const raw = storageGet();
   if (!raw) return [];
 
   try {
     const parsed = JSON.parse(raw);
     const result = historyArraySchema.safeParse(parsed);
     if (!result.success) {
-      localStorage.removeItem(KEY);
+      storageRemove();
       return [];
     }
     return result.data.map((entry) => ({
@@ -41,7 +59,7 @@ function readInitialHistory(): HistoryEntry[] {
       location: entry.location ?? null,
     }));
   } catch {
-    localStorage.removeItem(KEY);
+    storageRemove();
     return [];
   }
 }
@@ -55,13 +73,13 @@ export function useHistory() {
         0,
         MAX_ITEMS,
       );
-      localStorage.setItem(KEY, JSON.stringify(next));
+      storageSet(JSON.stringify(next));
       return next;
     });
   }, []);
 
   const clear = useCallback(() => {
-    localStorage.removeItem(KEY);
+    storageRemove();
     setHistory([]);
   }, []);
 

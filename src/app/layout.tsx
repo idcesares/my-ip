@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Manrope, Sora } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL;
-const metadataBase = siteUrl ? new URL(siteUrl) : undefined;
+const siteUrl = getSiteUrl();
+const metadataBase = new URL(siteUrl);
 
 const headingFont = Sora({
   subsets: ["latin"],
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
     title: "What's My IP? | Privacy-First IP & Network Diagnostics",
     description:
       "Instantly discover your public IP address, network quality, browser capability, and security header posture.",
-    url: siteUrl ?? undefined,
+    url: siteUrl,
     siteName: "What's My IP?",
     images: [
       {
@@ -90,7 +91,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "What's My IP?",
-    url: siteUrl ?? "https://example.com",
+    url: siteUrl,
     inLanguage: "en-US",
     creator: {
       "@type": "Person",

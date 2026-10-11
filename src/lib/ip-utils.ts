@@ -14,10 +14,6 @@ export function stripPort(value: string): string {
   return ip;
 }
 
-export function isValidIP(ip: string): boolean {
-  return ipaddr.isValid(stripPort(ip));
-}
-
 export function detectIPVersion(ip: string): "IPv4" | "IPv6" | "Unknown" {
   const clean = stripPort(ip);
   if (!ipaddr.isValid(clean)) return "Unknown";
