@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 20 or newer
+- Node.js 22.22.2 or newer (CI runs Node 24)
 - npm
 - Optional Vercel CLI for authenticated platform work
 

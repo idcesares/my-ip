@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Major dependency updates: React 19.3, TypeScript 6.0, Vitest 5, `@vitejs/plugin-react` 6 (Vite 8), jsdom 30, jest-dom 7 (now imported from `@testing-library/jest-dom/vitest`), `lucide-react` 1.x, framer-motion 14, and `@types/node` 22. CI now runs Node 24; `vitest.config.ts` became `vitest.config.mts`. Held back: ESLint 10 (`eslint-config-next` plugins do not yet declare support) and TypeScript 7 (`typescript-eslint` does not support it yet).
+- Updated dependencies within semver ranges (Next.js 16.4, Tailwind 4.3, Vitest 4.1.11, Radix, SWR, ipaddr.js, and others), resolving the critical Next.js advisory and the high-severity `postcss`, `undici`, `sharp`, and `nanoid` findings; raised the `postcss` override to 8.5.29. Only the dev-only `braces` chain under `eslint-config-next` remains (see `AGENTS.md`).
 - Removed Vercel Analytics so runtime behavior matches the no-analytics privacy contract.
 - Moved static security headers into Next.js configuration and removed request middleware overhead and the deprecated `X-XSS-Protection` header.
 - Documented Vercel-native IP/location metadata and Vercel WAF as the production request-limiting layer.
