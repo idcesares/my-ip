@@ -2,10 +2,7 @@ import type { WebRTCAssessment } from "@/lib/webrtc-diagnostics";
 import type { BrowserDiagnosticsSnapshot, IPInfo } from "@/types";
 
 export type DiagnosticFindingStatus =
-  | "positive"
-  | "attention"
-  | "informational"
-  | "unavailable";
+  "positive" | "attention" | "informational" | "unavailable";
 
 export interface DiagnosticFinding {
   id: string;

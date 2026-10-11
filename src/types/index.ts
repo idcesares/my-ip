@@ -5,20 +5,12 @@ export interface IPInfo {
   ipv6: string | null;
   isPublic: boolean;
   source:
-    | "cloudflare"
-    | "x-real-ip"
-    | "x-forwarded-for"
-    | "forwarded"
-    | "fallback";
+    "cloudflare" | "x-real-ip" | "x-forwarded-for" | "forwarded" | "fallback";
   confidence: "high" | "medium" | "low";
   provenance: {
     provider: "vercel" | "cloudflare" | "standard-forwarded" | "none";
     header:
-      | "x-real-ip"
-      | "cf-connecting-ip"
-      | "x-forwarded-for"
-      | "forwarded"
-      | null;
+      "x-real-ip" | "cf-connecting-ip" | "x-forwarded-for" | "forwarded" | null;
     trusted: boolean;
     forwarded: boolean;
   };

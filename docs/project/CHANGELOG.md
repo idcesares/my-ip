@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Updated dependencies within semver ranges (Next.js 16.4, Tailwind 4.3, Vitest 4.1.11, Radix, SWR, ipaddr.js, and others), resolving the critical Next.js advisory and the high-severity `postcss`, `undici`, `sharp`, and `nanoid` findings; raised the `postcss` override to 8.5.29. Only the dev-only `braces` chain under `eslint-config-next` remains (see `AGENTS.md`).
 - Removed Vercel Analytics so runtime behavior matches the no-analytics privacy contract.
 - Moved static security headers into Next.js configuration and removed request middleware overhead and the deprecated `X-XSS-Protection` header.
 - Documented Vercel-native IP/location metadata and Vercel WAF as the production request-limiting layer.

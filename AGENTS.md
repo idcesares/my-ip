@@ -88,6 +88,8 @@ npm run format
 npm audit
 ```
 
+Known audit exception (2026-10-11): `braces` → `micromatch` → `fast-glob` → `@next/eslint-plugin-next` (dev-only, lint-time globbing of repo files). No non-downgrade fix exists; re-check on each `eslint-config-next` release. Treat any other high/critical finding as blocking.
+
 Coverage thresholds apply to critical pure modules. UI changes also require browser verification at desktop and 390px, checking overflow, console errors, async states, and accessible names.
 
 ## Documentation rules
