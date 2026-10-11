@@ -1,6 +1,6 @@
-import { renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { useHistoryRecorder } from "@/hooks/use-history";
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { useHistory, useHistoryRecorder } from "@/hooks/use-history";
 import type { IPInfo } from "@/types";
 
 function ipInfo(overrides: Partial<IPInfo> = {}): IPInfo {
@@ -72,5 +72,64 @@ describe("useHistoryRecorder", () => {
     const add = vi.fn();
     renderHook(() => useHistoryRecorder(null, add));
     expect(add).not.toHaveBeenCalled();
+  });
+});
+
+describe("useHistory storage resilience", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  const entry = (ip: string) => ({
+    ip,
+    ipVersion: "IPv4" as const,
+    timestamp: "2026-07-11T00:00:00.000Z",
+    location: null,
+  });
+
+  it("starts empty when reading storage throws", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.history).toEqual([]);
+  });
+
+  it("keeps in-memory history when writing storage throws", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+    const { result } = renderHook(() => useHistory());
+    act(() => result.current.add(entry("203.0.113.1")));
+    expect(result.current.history.map((item) => item.ip)).toEqual([
+      "203.0.113.1",
+    ]);
+  });
+
+  it("clears without throwing when removing from storage fails", () => {
+    const { result } = renderHook(() => useHistory());
+    act(() => result.current.add(entry("203.0.113.1")));
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+    act(() => result.current.clear());
+    expect(result.current.history).toEqual([]);
+  });
+
+  it("discards corrupt stored data", () => {
+    localStorage.setItem("ip-history", "{not json");
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.history).toEqual([]);
+    expect(localStorage.getItem("ip-history")).toBeNull();
+  });
+
+  it("caps history at 10 entries, newest first", () => {
+    const { result } = renderHook(() => useHistory());
+    for (let i = 0; i < 12; i++) {
+      act(() => result.current.add(entry(`203.0.113.${i}`)));
+    }
+    expect(result.current.history).toHaveLength(10);
+    expect(result.current.history[0].ip).toBe("203.0.113.11");
   });
 });

@@ -30,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Requires Node.js 22.22.2 or newer (`.nvmrc` pins 24). Open `http://localhost:3000`.
 
 ## Environment
 
@@ -38,7 +38,7 @@ Copy `.env.example` values into `.env.local` for local development.
 
 Required for production SEO correctness:
 
-- `NEXT_PUBLIC_APP_URL`: your deployed origin (used for canonical/sitemap/robots metadata).
+- `NEXT_PUBLIC_APP_URL`: your deployed origin (used for canonical/sitemap/robots metadata). Production builds fail without it; on Vercel it falls back to `VERCEL_PROJECT_PRODUCTION_URL`. Outside production it defaults to `http://localhost:3000`.
 
 IP and optional location metadata require no provider secret on Vercel. The server uses request metadata exposed by `@vercel/functions`; local development may not provide the same metadata.
 
@@ -56,6 +56,15 @@ npm run build
 npm run test:smoke
 npm run format
 ```
+
+## Docker
+
+```bash
+docker build --build-arg NEXT_PUBLIC_APP_URL=https://your.domain -t my-ip .
+docker run -p 3000:3000 my-ip
+```
+
+The image runs as the unprivileged `node` user and exposes a healthcheck on `/robots.txt`. Outside Vercel the app trusts forwarding headers by default and labels the result low-confidence; put it behind a proxy you control (see `TRUSTED_PROXY_MODE` above). The image build is not exercised in CI.
 
 ## SEO
 

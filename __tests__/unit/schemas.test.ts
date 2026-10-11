@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { historyEntrySchema, ipQuerySchema } from "@/lib/schemas";
+import {
+  historyArraySchema,
+  historyEntrySchema,
+  ipQuerySchema,
+} from "@/lib/schemas";
 
 describe("ipQuerySchema", () => {
   it("defaults format to json when absent", () => {
@@ -57,48 +61,44 @@ describe("ipQuerySchema", () => {
 });
 
 describe("historyEntrySchema", () => {
-  it("accepts valid entry", () => {
-    const result = historyEntrySchema.safeParse({
-      ip: "203.0.113.42",
-      ipVersion: "IPv4",
-      timestamp: "2026-03-07T00:00:00.000Z",
-    });
-    expect(result.success).toBe(true);
+  const valid = {
+    id: "a",
+    ip: "203.0.113.42",
+    ipVersion: "IPv4",
+    timestamp: "2026-03-07T00:00:00.000Z",
+  };
+
+  it("accepts a valid entry", () => {
+    expect(historyEntrySchema.safeParse(valid).success).toBe(true);
   });
 
-  it("accepts entry with optional fields", () => {
-    const result = historyEntrySchema.safeParse({
-      ip: "203.0.113.42",
-      ipVersion: "IPv4",
-      timestamp: "2026-03-07T00:00:00.000Z",
-      source: "x-real-ip",
-      confidence: "high",
-    });
-    expect(result.success).toBe(true);
+  it("accepts a nullable or missing location", () => {
+    expect(
+      historyEntrySchema.safeParse({ ...valid, location: null }).success,
+    ).toBe(true);
+    expect(
+      historyEntrySchema.safeParse({ ...valid, location: "Paris, FR" }).success,
+    ).toBe(true);
   });
 
-  it("rejects entry missing ip", () => {
-    const result = historyEntrySchema.safeParse({
-      ipVersion: "IPv4",
-      timestamp: "2026-03-07T00:00:00.000Z",
-    });
-    expect(result.success).toBe(false);
+  it("rejects an entry missing id, ip or timestamp", () => {
+    for (const key of ["id", "ip", "timestamp"] as const) {
+      const { [key]: _omitted, ...rest } = valid;
+      void _omitted;
+      expect(historyEntrySchema.safeParse(rest).success).toBe(false);
+    }
   });
 
-  it("rejects entry missing timestamp", () => {
-    const result = historyEntrySchema.safeParse({
-      ip: "203.0.113.42",
-      ipVersion: "IPv4",
-    });
-    expect(result.success).toBe(false);
+  it("rejects a non-string ip", () => {
+    expect(historyEntrySchema.safeParse({ ...valid, ip: 12345 }).success).toBe(
+      false,
+    );
   });
 
-  it("rejects non-string ip", () => {
-    const result = historyEntrySchema.safeParse({
-      ip: 12345,
-      ipVersion: "IPv4",
-      timestamp: "2026-03-07T00:00:00.000Z",
-    });
-    expect(result.success).toBe(false);
+  it("validates arrays and rejects any invalid member", () => {
+    expect(historyArraySchema.safeParse([valid, valid]).success).toBe(true);
+    expect(historyArraySchema.safeParse([valid, { ip: "x" }]).success).toBe(
+      false,
+    );
   });
 });

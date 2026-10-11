@@ -20,22 +20,12 @@ export const ipQuerySchema = z.object({
     ),
 });
 
-export const geoSchema = z.object({
-  city: z.string().nullable(),
-  region: z.string().nullable(),
-  country: z.string().nullable(),
-  timezone: z.string().nullable(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
-  isp: z.string().nullable(),
-  asn: z.string().nullable(),
-  org: z.string().nullable(),
-});
-
 export const historyEntrySchema = z.object({
+  id: z.string(),
   ip: z.string(),
   ipVersion: z.string(),
   timestamp: z.string(),
-  source: z.string().optional(),
-  confidence: z.string().optional(),
+  location: z.string().nullable().optional(),
 });
+
+export const historyArraySchema = z.array(historyEntrySchema);

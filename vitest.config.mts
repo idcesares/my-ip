@@ -19,6 +19,7 @@ export default defineConfig({
         "src/lib/privacy-score.ts",
         "src/lib/schemas.ts",
         "src/lib/share.ts",
+        "src/lib/site-url.ts",
         "src/lib/webrtc-diagnostics.ts",
         "src/lib/webrtc-gatherer.ts",
       ],
